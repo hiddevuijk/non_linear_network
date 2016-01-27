@@ -11,7 +11,7 @@ std::string remove_text(std::string str)
 	return str.substr(pos+1);
 }
 
-void read_input(int& N, double& meanS,double& varS, double& meanA, double& varA,int& seed,std::string infile_name)
+void read_input(int& N, double& meanE,double& meanI, double& var,int& seed,std::string infile_name)
 {
 	ifstream input(infile_name);
 	std::string temp;
@@ -22,19 +22,15 @@ void read_input(int& N, double& meanS,double& varS, double& meanA, double& varA,
 
 	std::getline(input,temp);
 	temp = remove_text(temp);
-	meanS = std::stod(temp);	
+	meanE = std::stod(temp);	
 
 	std::getline(input,temp);
 	temp = remove_text(temp);
-	varS = std::stod(temp);
+	meanI = std::stod(temp);	
 
 	std::getline(input,temp);
 	temp = remove_text(temp);
-	meanA = std::stod(temp);	
-
-	std::getline(input,temp);
-	temp = remove_text(temp);
-	varA = std::stod(temp);
+	var = std::stod(temp);
 
 	std::getline(input,temp);
 	temp = remove_text(temp);

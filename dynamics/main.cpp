@@ -15,6 +15,8 @@
 #include "headers/write_matrix.h"
 #include "headers/box_muller.h"
 #include "headers/read_input.h"
+#include "headers/functions.h"
+
 
 #include <vector>
 #include <iostream>
@@ -24,6 +26,7 @@
 #include <math.h>
 
 using namespace::std;
+
 
 int main()
 {
@@ -35,10 +38,22 @@ int main()
 	int tf;		// integrate from 0 intil tf
 	int tsave;	// number of point to save
 	
+	int function; // transfer function, defined int functions
+
+	double mean_noise;
+	double var_noise;
+
 	// read valuese of the variables from input file
-	read_input(N,g,tf,tsave,seed, "input.txt");
+	read_input(N,g,tf,tsave,function,mean_noise,var_noise,seed, "input.txt");
+
+	double std_noise = sqrt(var_noise);
+	double dt = tf/(double)tsave;
+	double sqrt_dt = sqrt(dt);
+
 	Ran r(seed);	// random number generator
-	double std  = g/sqrt((double)N);	//std of connectivity matrix
+
+	// standard deviation of connectivity matrix
+	double std  = g/sqrt((double)N);
 
 	// create connectivity matrix w
 	vector<double> temp(N,.0);
@@ -46,6 +61,8 @@ int main()
 
 	// state vector of the neurons
 	VecDoub x(N,0.0);
+	vector<double> tval(tsave,0.0);
+	vector<vector<double> > xt(N,tval);
 
 	// initialize w and x
 	for(int i=0;i<N;++i){
@@ -62,14 +79,30 @@ int main()
 	double h1 = 0.01;
 	double hmin = 0.;
 
-	
-	NW nw(w,N);
-	Output out(tsave);
-	Odeint<StepperDopr5<NW> > ode(x,0,tf,atol,rtol,h1,hmin,out,nw);
-	ode.integrate();
+	// f is a pointer to the transfer function
+	double (*f)(double);
+	if(function == 1) f = th_linear;
+	if(function == 2) f = tanh;
+	if(function == 3) f = tanh01;
 
-	write_matrix(out.xsave,out.count,"t.csv");
-	write_matrix(out.ysave,N,out.count,"x.csv");
+	NW nw(w,N,f);
+	Output out;
+	vector<double> noise(tsave,0.0);
+	for(int ti=0;ti<tsave;++ti) noise[ti] = sqrt_dt*std_noise*bm_transform(r);
+	for(int ti=0;(ti+1)<tsave;++ti){
+		Odeint<StepperDopr5<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
+		ode.integrate();
+		for(int i=0;i<N;++i) {
+			xt[i][ti] = x[i];
+			x[i] += noise[i] + sqrt_dt*std_noise*bm_transform(r);
+			x[i] += noise[i];
+		}
+		tval[ti+1]= ti*dt;
+	}
+
+	// write t values
+	write_matrix(tval,tsave,"t.csv");
+	write_matrix(xt,N,tsave,"x.csv");
 
 	return 0;
 }

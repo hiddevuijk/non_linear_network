@@ -1,6 +1,5 @@
 N =500
-meanS =0
-varS =1.
-meanA =0
-varA =1.
+meanE = 1.
+meanI = -1.
+var = 1.
 seed =123456789
