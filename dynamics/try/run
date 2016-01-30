@@ -1,0 +1,11 @@
+#!/bin/bash
+
+rm names.txt *.csv
+
+for g in 0.10 0.50  1.00  1.50  2.00 2.50
+do
+
+	./test $g
+	echo $g >> names.txt
+done
+

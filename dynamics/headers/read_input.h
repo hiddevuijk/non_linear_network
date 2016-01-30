@@ -48,7 +48,6 @@ void read_input(int& N, double& g,int& tf, int& tsave,int& function, double& mea
 	temp = remove_text(temp);
 	seed = std::stoi(temp);
 
-
 }
 
 

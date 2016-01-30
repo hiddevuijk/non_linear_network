@@ -1,0 +1,9 @@
+#!/Bin/bash
+
+for g in 0.50 0.75 0.90 1.00 1.10 1.25 1.50 2.00
+do
+
+	./test $g
+	echo $g >> names.txt
+done
+

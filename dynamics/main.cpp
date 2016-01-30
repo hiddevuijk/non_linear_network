@@ -16,7 +16,7 @@
 #include "headers/box_muller.h"
 #include "headers/read_input.h"
 #include "headers/functions.h"
-
+#include "headers/other.h"
 
 #include <vector>
 #include <iostream>
@@ -28,7 +28,7 @@
 using namespace::std;
 
 
-int main()
+int main(int argc, char* argv[])
 {
 
 	int N;		// number of neurons
@@ -45,6 +45,16 @@ int main()
 
 	// read valuese of the variables from input file
 	read_input(N,g,tf,tsave,function,mean_noise,var_noise,seed, "input.txt");
+	// check for commanline input
+	if(argc ==2) {
+		try {
+			g = stod(argv[1]);
+		} catch( exception& e) {
+			cerr << "Unable to cast " << argv[1] << " to int" << endl;
+			cerr << "\t error: " << e.what() << endl;
+			return 1;
+		}
+	}
 
 	double std_noise = sqrt(var_noise);
 	double dt = tf/(double)tsave;
@@ -68,7 +78,7 @@ int main()
 	for(int i=0;i<N;++i){
 		x[i] = r.doub(); // uniform distributed random number
 		for( int j=0;j<N;++j) {
-			w[i][j] = std*bm_transform(r); // normal dist mean=0 std=std
+			w[i][j] =  std*bm_transform(r); // normal dist mean=0 std=std
 		}
 	}
 
@@ -87,23 +97,29 @@ int main()
 
 	NW nw(w,N,f);
 	Output out;
-	vector<double> noise(tsave,0.0);
-	for(int ti=0;ti<tsave;++ti) noise[ti] = sqrt_dt*std_noise*bm_transform(r);
 	for(int ti=0;(ti+1)<tsave;++ti){
 		Odeint<StepperDopr5<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
 		ode.integrate();
 		for(int i=0;i<N;++i) {
 			xt[i][ti] = x[i];
-			x[i] += noise[i] + sqrt_dt*std_noise*bm_transform(r);
-			x[i] += noise[i];
+			x[i] += sqrt_dt*std_noise*bm_transform(r);
 		}
 		tval[ti+1]= ti*dt;
 	}
 
-	// write t values
-	write_matrix(tval,tsave,"t.csv");
-	write_matrix(xt,N,tsave,"x.csv");
+	
 
+	// save results
+	string add_to_name = "";
+
+	stringstream stream;
+	if(argc ==2){
+		stream << fixed << setprecision(2) << g;
+		add_to_name = '_' + stream.str(); 
+	}
+	write_matrix(tval,tsave,"t" + add_to_name + ".csv");
+	write_matrix(xt,N,tsave,"x" + add_to_name + ".csv");
+	
 	return 0;
 }
 

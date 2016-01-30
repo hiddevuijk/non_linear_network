@@ -1,0 +1,9 @@
+#!/bin/bash
+rm names.txt
+for g in  1.10 1.25 1.50 2.00
+do
+
+	./test $g
+	echo $g >> names.txt
+done
+

@@ -1,0 +1,8 @@
+N=1000
+g=4
+tf=500
+tsave=1000
+function=2
+mean_noise=0
+var_noise=.1
+seed =123456789
