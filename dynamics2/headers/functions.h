@@ -5,8 +5,9 @@
 
 double th_linear(double x)
 {
-	if(x>0) return x;
-	else return 0;
+	if(x<=0) return 0;
+	else if(x>0 and x<1) return x;
+	else if(x>=1) return 1;
 }
 
 double tanh01(double x)

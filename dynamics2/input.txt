@@ -5,4 +5,7 @@ tsave=1000
 function=2
 mean_noise=0
 var_noise=.1
+meanE=1
+meanI=-1
+a=1
 seed =123456789

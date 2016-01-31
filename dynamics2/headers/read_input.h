@@ -11,7 +11,10 @@ std::string remove_text(std::string str)
 	return str.substr(pos+1);
 }
 
-void read_input(int& N, double& g,int& tf, int& tsave,int& function, double& mean_noise, double& var_noise,int& seed,std::string infile_name)
+void read_input(int& N, double& g,int& tf, int& tsave,
+		int& function, double& mean_noise, double& var_noise,
+		double& meanE, double& meanI, double& a,
+		int& seed,std::string infile_name)
 {
 	ifstream input(infile_name);
 	std::string temp;
@@ -46,10 +49,45 @@ void read_input(int& N, double& g,int& tf, int& tsave,int& function, double& mea
 
 	std::getline(input,temp);
 	temp = remove_text(temp);
-	seed = std::stoi(temp);
+	meanE = std::stod(temp);
 
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	meanI = std::stod(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	a = std::stod(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	seed = std::stoi(temp);
 }
 
+
+void read_integration_vars(double& atol, double& rtol, double& h1, double& hmin, std::string infile_name)
+{
+	ifstream input(infile_name);
+	std::string temp;
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	atol = std::stod(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	rtol = std::stod(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	h1 = std::stod(temp);
+
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	hmin = std::stod(temp);
+
+}
 
 
 #endif
