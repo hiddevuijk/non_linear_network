@@ -1,6 +1,7 @@
 // nr3 headers
 #include "nr_headers/nr3.h"
 #include "nr_headers/ran.h"
+//#include "nr_headers/erf.h"
 #include "nr_headers/fourier.h"
 #include "nr_headers/correl.h"
 #include "nr_headers/stepper.h"
@@ -43,7 +44,7 @@ int main(int argc, char* argv[])
 	int tsave;		// number of timesteps to save
 	int seed;		// seed for the random generator
 	double g;		// gain parameter
-
+	
 	double meanE;	// mean of the exc. pop
 	double meanI;	// mean of the inh. pop
 
@@ -53,8 +54,10 @@ int main(int argc, char* argv[])
 	double mean_noise;	// mean of the input noise
 	double var_noise;	// var of the input noise
 
+	int db;			// if db=1 detailed balence contition satisfied
+
 	// read valuese of the variables from input file
-	read_input(N,g,tf,tsave,function,mean_noise,var_noise,meanE,meanI,a,seed, "input.txt");
+	read_input(N,p,g,tf,tsave,function,mean_noise,var_noise,meanE,meanI,a,db,seed, "input.txt");
 
 	// integration settings
 	double atol;
@@ -67,9 +70,9 @@ int main(int argc, char* argv[])
 
 	// over ride variable if user input is supplied
 	if(argc >1){
-		read_user_input(argc,argv,N,g,seed,tf,tsave,
-			function,p,mean_noise,var_noise,
-			meanE,meanI,a,name);
+		read_user_input(argc,argv,N,p,g,seed,tf,
+			tsave,function,mean_noise,var_noise,
+			meanE,meanI,a,db,name);
 	}
 
 	meanE /=sqrt(N);
@@ -89,6 +92,7 @@ int main(int argc, char* argv[])
 	if(function == 1) f = th_linear;
 	if(function == 2) f = tanh;
 	if(function == 3) f = tanh01;
+	if(function == 4) f = tanh001;
 
 	// create connectivity matrix w
 	vector<double> temp(N,.0);
@@ -101,15 +105,12 @@ int main(int argc, char* argv[])
 
 	// initialize  x w rand uniform(-1,1)
 	for(int i=0;i<N;++i) x[i] = 2*(0.5-r.doub());
-
 	//initialize w
 	if(p==1) gen_rand_mat(w,N,std,r);
-//	if(p==2) gen_rand_mat(w,N,meanE,meanI,stdE,stdI,r);
-
+	if(p==2) gen_rand_mat(w,N,meanE,meanI,stdE,stdI,db,r);
 
 
 	// start integration
-
 	NW nw(w,N,f);
 	Output out;
 	for(int ti=0;(ti+1)<tsave;++ti){
@@ -121,8 +122,6 @@ int main(int argc, char* argv[])
 		}
 		tval[ti+1]= ti*dt;
 	}
-
-
 
 	// save results
 	if(name!="") name = "_"+name;

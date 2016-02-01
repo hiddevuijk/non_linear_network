@@ -4,10 +4,10 @@
 #include <string>
 
 	// over ride variable if user input is supplied
-void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
-		int& tf, int& tsave, int& function,int& p,
+void read_user_input(int argc, char* argv[], int& N, int& p, double& g,
+		int& seed, int& tf, int& tsave, int& function,
 		double& input_mean, double& input_var, double& meanE, double& meanI,
-		double& a,std::string& name)
+		double& a,int& db,std::string& name)
 {
 	for(int i=1;i<(argc-1);i+=2) {
 		std::string flag = argv[i] ;
@@ -24,7 +24,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-g"){
+		else if(flag=="-g"){
 			try{
 				g = stod(val);
 			} catch(exception& e) {
@@ -33,7 +33,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-seed"){
+		else if(flag=="-seed"){
 			try{
 				seed = stoi(val);
 			} catch(exception& e) {
@@ -42,7 +42,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-tf"){
+		else if(flag=="-tf"){
 			try{
 				tf = stoi(val);
 			} catch(exception& e) {
@@ -51,7 +51,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-tsave"){
+		else if(flag=="-tsave"){
 			try{
 				tsave = stoi(val);
 			} catch(exception& e) {
@@ -60,7 +60,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-function"){
+		else if(flag=="-function"){
 			try{
 				int functionn = stoi(val);
 				if(functionn < 3) function = functionn;
@@ -74,7 +74,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-p"){
+		else if(flag=="-p"){
 			try{
 				int pp = stoi(val);
 				if(pp < 3) p = pp;
@@ -88,7 +88,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-meanE"){
+		else if(flag=="-meanE"){
 			try{
 				meanE = stod(val);
 			} catch(exception& e) {
@@ -97,7 +97,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-meanI"){
+		else if(flag=="-meanI"){
 			try{
 				meanI = stod(val);
 			} catch(exception& e) {
@@ -106,7 +106,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-		if(flag=="-iv"){
+		else if(flag=="-iv"){
 			try{
 				input_var = stod(val);
 			} catch(exception& e) {
@@ -115,7 +115,7 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 			}
 		}
 
-	if(flag=="-im"){
+		else if(flag=="-im"){
 			try{
 				input_mean = stod(val);
 			} catch(exception& e) {
@@ -125,13 +125,27 @@ void read_user_input(int argc, char* argv[], int& N, double& g, int& seed,
 		}
 
 
-		if(flag=="-o"){
+		else if(flag=="-o"){
 			try{
 				name = val;
 			} catch(exception& e) {
 				cerr << " error in " << argv[0]
 				<< ", "<< argv[i] << " not used."<<endl;
 			}
+		}
+
+		else if(flag=="-db") {
+			try{
+				db = stoi(val);
+			} catch(exception& e) {
+				cerr << " error in " << argv[0]
+				<< ", " << argv[i] << " not used,"<< endl;
+			}
+		}
+
+		else {
+			cerr << " error in " << argv[0]
+			<< ", " << argv[i] << " not used flag."<< endl;
 		}
 	}
 

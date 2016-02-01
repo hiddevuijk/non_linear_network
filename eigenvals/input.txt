@@ -1,5 +1,7 @@
 N =500
 meanE = 1.
 meanI = -1.
-var = 1.
+g=1.
+a=1.
+db=1
 seed =123456789

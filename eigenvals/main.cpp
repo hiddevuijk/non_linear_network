@@ -1,7 +1,9 @@
 #include </usr/local/Cellar/eigen/3.2.4/include/eigen3/Eigen/Dense>
 
+#include <random>
 #include "nr_headers/nr3.h"
 #include "nr_headers/ran.h"
+#include "nr_headers/erf.h"
 #include "nr_headers/gamma.h"
 #include "nr_headers/deviates.h"
 
@@ -26,13 +28,18 @@ int main()
 	int N;			// number of neurons
 	double meanE;	// mean strength of exc. neurons in units 1/sqrt(N)
 	double meanI;	// mean strength of inh. neurons in units 1/sqrt(N)
-	double var; 	// variance units: 1/N
-
+	double g; 		// gain parameter
+	double a;		// varE= g^2/(Na), varI=g^2/N
+	int db;
 	int seed;		//seed for the random number generator
-	
-	read_input(N,meanE,meanI,var,seed, "input.txt");
+
+	string dist = "normal";
+		
+	read_input(N,meanE,meanI,g,a,db,seed, "input.txt");
 
 	Ran r(seed);
+	default_random_engine generator;
+	
 
 	// prob. of exc. col. in w
 	// s.t. f*meanE + (1-f)*meanI =0
@@ -40,30 +47,82 @@ int main()
 	if( meanI-meanE == 0) f = 0.5;
 	else f = meanI/(meanI-meanE);
 
-	double std = sqrt(var/(double)N);
+
+	double varE = g*g/(a*N);
+	double varI = g*g/N;
+	double stdE = g/sqrt(N*a);
+	double stdI = g/sqrt((double)N);
 	meanE = meanE/sqrt((double)N);
 	meanI = meanI/sqrt((double)N);
 
-	vector<double> m(N,meanI);
-	for(int i =0;i<f*N;++i) m[i] = meanE;
-	shuffle(m,N,r);
-	double sum =0;
-	for(int i=0;i<N;++i) sum+=m[i];
-	cout << sum << endl;
+	normal_distribution<double> normdist01(0.0,1.0);
+	normal_distribution<double> normdistE(meanE,stdE);
+	normal_distribution<double> normdistI(meanI,stdI);
+
+	double muE = log(meanE/sqrt(1+varE/(meanE*meanE)));
+	double muI = log(-1.*meanI/sqrt(1+varI/(meanI*meanI)));
+	double sigE = sqrt(log(1+varE/(meanE*meanE)));
+	double sigI = sqrt(log(1+varI/(meanI*meanI)));
+
+
+	lognormal_distribution<double> lognormdistE(muE,sigE);
+	lognormal_distribution<double> lognormdistI(muI,sigI);
+
+
+
+	vector<char> EI(N,'I');
+	for(int i=0;i<f*N;++i) EI[i] = 'E';
+	shuffle(EI,N,r);
 
 
 	// create w, the matrix of connection strengths
 	MatrixXcf w(N,N);
 	vector<double> row_sum(N,0.0);
-	for(int i=0;i<N;++i){
-		for( int j=0;j<N;++j) {
-			w(i,j) = std*bm_transform(r);
-			row_sum[i] += w(i,j).real();
+
+
+	if(dist=="normal") {	
+		// row=i, col=j
+		for(int i=0;i<N;++i) {
+			for(int j=0;j<N;++j) {
+				if(EI[j]=='E') {
+					w(i,j) = stdE*normdist01(generator);
+					row_sum[i] += w(i,j).real();
+				}
+				if(EI[j]=='I') {
+					w(i,j) = stdI*normdist01(generator);
+					row_sum[i] += w(i,j).real();
+				}
+			}
+		}
+		// if db = 1 impose detailed balance condition
+		if(db==1) {
+			for(int i=0;i<N;++i) {
+				for(int j=0;j<N;++j) {
+					w(i,j) -= row_sum[i]/N;
+				}
+			}
+		}
+
+		// add M to W
+		for(int i=0;i<N;++i) {
+			for(int j=0;j<N;++j) {
+				if(EI[j]=='E') w(i,j) +=  meanE;
+				if(EI[j]=='I') w(i,j) +=  meanI;
+			}
 		}
 	}
-	for(int i=0;i<N;++i) {
-		for(int j=0;j<N;++j) {
-			w(i,j) += m[j]-1.*row_sum[i]/N;
+
+	if(dist=="lognormal") {	
+		// row=i, col=j
+		for(int i=0;i<N;++i) {
+			for(int j=0;j<N;++j) {
+				if(EI[j]=='E') {
+					w(i,j) = lognormdistE(generator);
+				}
+				if(EI[j]=='I') {
+					w(i,j) = -1.*lognormdistI(generator);
+				}
+			}
 		}
 	}
 
