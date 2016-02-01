@@ -33,9 +33,9 @@ int main()
 	int db;
 	int seed;		//seed for the random number generator
 
-	string dist = "normal";
+	string dist;	// normal or  lognormal
 		
-	read_input(N,meanE,meanI,g,a,db,seed, "input.txt");
+	read_input(N,meanE,meanI,g,a,db,dist,seed, "input.txt");
 
 	Ran r(seed);
 	default_random_engine generator;

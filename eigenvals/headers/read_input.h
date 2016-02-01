@@ -12,8 +12,8 @@ std::string remove_text(std::string str)
 }
 
 void read_input(int& N, double& meanE,double& meanI,
-				double& g,double& a,int& db,int& seed,
-				std::string infile_name)
+				double& g,double& a,int& db,std::string& dist,
+				int& seed, std::string infile_name)
 {
 	ifstream input(infile_name);
 	std::string temp;
@@ -41,6 +41,10 @@ void read_input(int& N, double& meanE,double& meanI,
 	std::getline(input,temp);
 	temp = remove_text(temp);
 	db = std::stoi(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	dist = temp;
 
 	std::getline(input,temp);
 	temp = remove_text(temp);
