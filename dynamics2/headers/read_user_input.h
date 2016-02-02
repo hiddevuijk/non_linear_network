@@ -32,6 +32,14 @@ void read_user_input(int argc, char* argv[], int& N, int& p, double& g,
 				<< ", "<< argv[i] << " not used."<<endl;
 			}
 		}
+		else if(flag=="-a"){
+			try{
+				a = stod(val);
+			} catch(exception& e) {
+				cerr << " error in " << argv[0]
+				<< ", "<< argv[i] << " not used."<<endl;
+			}
+		}
 
 		else if(flag=="-seed"){
 			try{
@@ -151,5 +159,57 @@ void read_user_input(int argc, char* argv[], int& N, int& p, double& g,
 
 }
 
+void read_user_input(int argc, char* argv[], int& N,
+		int& tf, int& tsave,std::string& name)
+{
+	for(int i=1;i<(argc-1);i+=2) {
+		std::string flag = argv[i] ;
+		std::string val;
+		val = argv[i+1];
+		try {val = argv[i+1];}
+		catch(exception& e) {}
+		if(flag=="-N"){
+			try{
+				N = stoi(val);
+			} catch(exception& e) {
+				cerr << " error in " << argv[0]
+				<< ", "<< argv[i] << " not used."<<endl;
+			}
+		}
 
+		else if(flag=="-tf"){
+			try{
+				tf = stoi(val);
+			} catch(exception& e) {
+				cerr << " error in " << argv[0]
+				<< ", "<< argv[i] << " not used."<<endl;
+			}
+		}
+
+		else if(flag=="-tsave"){
+			try{
+				tsave = stoi(val);
+			} catch(exception& e) {
+				cerr << " error in " << argv[0]
+				<< ", "<< argv[i] << " not used."<<endl;
+			}
+		}
+
+
+		else if(flag=="-o"){
+			try{
+				name = val;
+			} catch(exception& e) {
+				cerr << " error in " << argv[0]
+				<< ", "<< argv[i] << " not used."<<endl;
+			}
+		}
+
+		else {
+			cerr << " error in " << argv[0]
+			<< ", " << argv[i] << " not used flag."<< endl;
+		}
+	}
+
+}
 #endif

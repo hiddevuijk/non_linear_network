@@ -4,6 +4,7 @@
 //#include "nr_headers/erf.h"
 #include "nr_headers/fourier.h"
 #include "nr_headers/correl.h"
+#include "nr_headers/spectrum.h"
 #include "nr_headers/stepper.h"
 #include "nr_headers/stepperbs.h"
 #include "nr_headers/odeint.h"
@@ -31,6 +32,8 @@
 
 using namespace::std;
 
+
+double nof(double a) { return 1.;}
 
 int main(int argc, char* argv[])
 {
@@ -95,8 +98,8 @@ int main(int argc, char* argv[])
 	if(function == 4) f = tanh001;
 
 	// create connectivity matrix w
-	vector<double> temp(N,.0);
-	vector<vector<double> > w(N,temp);
+//	vector<double> temp(N,.0);
+	vector<vector<double> > w(N,vector<double> (N,0.0));
 
 	// state vector of the neurons
 	VecDoub x(N,0.0);
@@ -123,11 +126,72 @@ int main(int argc, char* argv[])
 		tval[ti+1]= ti*dt;
 	}
 
-	// save results
+
+	int t2 = 2*pow2(tsave);
+	// correlations
+	VecDoub temp(t2,0.0);
+	VecDoub acorr_temp(t2,0.0);
+	VecDoub acorr(t2,0.0);
+	VecDoub psd(t2,0.0);
+
+	VecDoub mean(t2,0.0);
+	VecDoub acorr_mean(t2,0.0);
+	VecDoub psd_mean(t2,0.0);
+
+	double mean_avg =0;
+	for(int i=0;i<N;++i) {
+		double temp_avg = 0;
+		for(int ti=0;ti<tsave;++ti) {
+			temp[ti] = xt[i][ti];
+			temp_avg += temp[ti];
+
+			mean[ti] += xt[i][ti]/(double)N;
+		}
+
+		for(int ti=0;ti<tsave;++ti)
+			temp[ti] -= temp_avg/(double)tsave;
+
+		correl(temp,temp,acorr_temp);
+		
+		for(int ti=0;ti<t2;++ti)
+			acorr[ti] += acorr_temp[ti]/(N*acorr_temp[0]);
+
+//		// psd 
+//		realft(temp,1);
+//		psd[0] += temp[0]/(double)N;
+//		psd[tsave/2] += temp[1]/(double)N;
+//		for(int ti=1;ti<(tsave-1);++ti)
+//			psd[ti] += sqrt(temp[2*ti]*temp[2*ti]+temp[2*ti+1]*temp[2*ti+1])/N;
+//		
+	}
+
+	for(int ti=0;ti<tsave;++ti) mean_avg += mean[ti];
+	for(int ti=0;ti<tsave;++ti)
+		mean[ti] -= mean_avg/(double)tsave;
+
+	correl(mean,mean,acorr_mean);
+	double acorr_mean0 = acorr_mean[0];
+	for(int ti=0;ti<t2;++ti)
+		acorr_mean[ti] /= acorr_mean0;
+
+//	// psd_mean
+//	realft(mean,1);
+//	psd_mean[0] = mean[0];
+//	psd_mean[tsave/2] = mean[1];
+//	for(int ti=0;ti<(tsave-1);++ti)
+//		psd_mean[ti] = sqrt(mean[2*ti]*mean[2*ti] + mean[2*ti+1]*mean[2*ti+1]);
+//
+//
+
+
 	if(name!="") name = "_"+name;
+//	write_matrix(psd,tsave/2,"psd"+name+".csv");
+//	write_matrix(psd_mean,tsave/2,"psd_mean"+name+".csv");
+	write_matrix(acorr,t2/2,"acorr" + name + ".csv");
+	write_matrix(acorr_mean,t2/2,"acorr_mean"+name+".csv");
 	write_matrix(tval,tsave,"t" + name + ".csv");
 	write_matrix(xt,N,tsave,"x" + name + ".csv");
-	
+	write_matrix(mean,tsave,"mean"+name+".csv");	
 	return 0;
 }
 

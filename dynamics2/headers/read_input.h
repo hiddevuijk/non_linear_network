@@ -72,6 +72,30 @@ void read_input(int& N,int& p, double& g,int& tf, int& tsave,
 	seed = std::stoi(temp);
 }
 
+void read_input(int& N,int& tf,int& tsave,std::string infile_name)
+{
+	ifstream input(infile_name);
+	std::string temp;
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	N = std::stoi(temp);
+
+	std::getline(input,temp);
+	std::getline(input,temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	tf = std::stoi(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	tsave = std::stoi(temp);
+
+}
+
+
+
 
 void read_integration_vars(double& atol, double& rtol, double& h1, double& hmin, std::string infile_name)
 {

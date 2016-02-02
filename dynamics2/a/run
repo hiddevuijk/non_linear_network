@@ -1,0 +1,10 @@
+#!/bin/bash
+rm names.txt
+
+for a in 1.00 0.80 0.60 0.40 0.20
+do
+	./test -a $a -o $a
+	echo $a >> names.txt
+done
+
+
