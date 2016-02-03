@@ -3,7 +3,7 @@
 
 #include <fstream>
 #include <string>
-
+#include "functions.h"
 
 std::string remove_text(std::string str)
 {
@@ -12,7 +12,7 @@ std::string remove_text(std::string str)
 }
 
 void read_input(int& N,int& p, double& g,int& tf, int& tsave,
-		int& function, double& mean_noise, double& var_noise,
+		double& r0, double& mean_noise, double& var_noise,
 		double& meanE, double& meanI, double& a,int&db,
 		int& seed,std::string infile_name)
 {
@@ -41,7 +41,7 @@ void read_input(int& N,int& p, double& g,int& tf, int& tsave,
 
 	std::getline(input,temp);
 	temp = remove_text(temp);
-	function = std::stoi(temp);
+	r0 = std::stod(temp);
 
 	std::getline(input,temp);
 	temp = remove_text(temp);

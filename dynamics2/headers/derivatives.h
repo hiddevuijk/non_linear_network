@@ -2,14 +2,15 @@
 #define GUARD_derivatives_h
 
 #include <math.h>
-
+#include "functions.h"
 
 struct NW {
-	vector<vector<double> > w;
+	std::vector<std::vector<double> > w;
 	int N;
-	double (*f)(double);
-	NW(vector<vector<double> > ww,int  NN, double (*ff)(double)) :
-		w(ww) , N(NN),f(ff) {}
+
+	Tanhr0 f;
+	NW(std::vector<std::vector<double> > ww, int NN, Tanhr0 ff)
+			: w(ww), N(NN), f(ff) {}
 
 	void operator() (const Doub t, VecDoub_I& x, VecDoub_O& dxdt)
 	{

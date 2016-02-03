@@ -5,7 +5,7 @@
 
 	// over ride variable if user input is supplied
 void read_user_input(int argc, char* argv[], int& N, int& p, double& g,
-		int& seed, int& tf, int& tsave, int& function,
+		int& seed, int& tf, int& tsave, double& r0,
 		double& input_mean, double& input_var, double& meanE, double& meanI,
 		double& a,int& db,std::string& name)
 {
@@ -68,14 +68,9 @@ void read_user_input(int argc, char* argv[], int& N, int& p, double& g,
 			}
 		}
 
-		else if(flag=="-function"){
+		else if(flag=="-r0"){
 			try{
-				int functionn = stoi(val);
-				if(functionn < 3) function = functionn;
-				else{
-					cerr << " error in " << argv[0]
-					<< ", "<< argv[i] << " not used."<<endl;
-				}
+				r0 = stod(val);
 			} catch(exception& e) {
 				cerr << " error in " << argv[0]
 				<< ", "<< argv[i] << " not used."<<endl;
