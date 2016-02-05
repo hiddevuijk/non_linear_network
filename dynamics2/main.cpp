@@ -20,6 +20,8 @@
 #include "headers/functions.h"
 #include "headers/other.h"
 #include "headers/gen_rand_mat.h"
+#include "headers/acorr.h"
+#include "headers/gc.h"
 
 //std headers
 #include <vector>
@@ -57,7 +59,7 @@ int main(int argc, char* argv[])
 	double r0;		// r0 value in F-I functor ( def in function.h)
 
 	// read valuese of the variables from input file
-	read_input(N,p,g,tf,tsave,r0,mean_noise,var_noise,meanE,meanI,a,db,seed, "input.txt");
+	read_input(N,p,g,tf,tsave,r0,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
 
 	// integration settings
 	double atol;
@@ -75,6 +77,7 @@ int main(int argc, char* argv[])
 			meanE,meanI,a,db,name);
 	}
 
+
 	meanE /=sqrt(N);
 	meanI /=sqrt(N);
 	mean_noise /= sqrt(N);
@@ -84,6 +87,7 @@ int main(int argc, char* argv[])
 	double std  = g/sqrt((double)N);
 	double stdE = g/sqrt(N*a);
 	double stdI = g/sqrt(N);
+
 
 	Ran r(seed);	// random number generator
 
@@ -119,6 +123,63 @@ int main(int argc, char* argv[])
 
 	int t2 = 2*pow2(tsave);
 	// correlations
+	VecDoub acorrn(tsave,0.0);
+	VecDoub	acorr(t2,0.0);
+	VecDoub psd(t2/2,0.0);
+	VecDoub freq(t2/2,0.0);
+
+	// first mean then ...
+	VecDoub average_x(t2,0.0);
+	VecDoub acorrn_mean(t2,0.0);
+	VecDoub acorr_mean(t2,0.0);
+	VecDoub psd_mean(t2/2,0.0);
+
+	// temporary vec
+	VecDoub temp(t2,0.0);
+
+	VecDoub acorrn_temp(t2,0.0);
+	VecDoub acorr_temp(t2,0.0);
+	VecDoub psd_temp(t2/2,0.0);
+
+
+	for(int i=0;i<N;++i) {
+		for(int ti=0;ti<tsave;++ti){
+			temp[ti] = xt[i][ti];
+			average_x[ti] += temp[ti]/(double)N;		
+		}
+
+		autocorrel_norm(temp,tsave,acorrn_temp);
+		autocorrel_psd(temp,tsave,acorr_temp,psd_temp);
+		for(int ti=0;ti<tsave;++ti){
+			acorrn[ti] += acorrn_temp[ti]/(double)N;
+			acorr[ti] += acorr_temp[ti]/(double)N;
+			if(ti<t2/2)	psd[ti] += psd_temp[ti]/=(double)N;
+		}
+
+	}
+
+	autocorrel_norm(average_x,tsave,acorrn_mean);
+	autocorrel_psd(average_x,tsave,acorr_mean,psd_mean);
+
+	psd_frequencies(t2,dt,freq);
+
+	// write results
+	if(name!="") name = "_"+name;
+	write_matrix(xt,N,tsave,"x" + name + ".csv");
+	write_matrix(tval,tsave,"t"+name+".csv");
+	write_matrix(average_x,tsave,"mean"+name+".csv");	
+	write_matrix(freq,t2/2,"freq"+name+".csv");
+	write_matrix(psd,t2/2,"psd"+name+".csv");
+	write_matrix(psd_mean,t2/2,"psd_mean"+name+".csv");
+	write_matrix(acorrn,tsave,"acorrn"+name+".csv");
+	write_matrix(acorrn_mean,tsave,"acorrn_mean"+name+".csv");
+	write_matrix(acorr,tsave,"acorr"+name+".csv");
+	write_matrix(acorr_mean,tsave,"acorr_mean"+name+".csv");
+	
+	return 0;
+}
+
+/*
 	VecDoub temp(t2,0.0);
 	VecDoub acorr_temp(t2,0.0);
 	VecDoub acorr(t2,0.0);
@@ -155,17 +216,4 @@ int main(int argc, char* argv[])
 	double acorr_mean0 = acorr_mean[0];
 	for(int ti=0;ti<t2;++ti)
 		acorr_mean[ti] /= acorr_mean0;
-
-
-	// write results
-	if(name!="") name = "_"+name;
-	write_matrix(acorr,t2/2,"acorr" + name + ".csv");
-	write_matrix(acorr_mean,t2/2,"acorr_mean"+name+".csv");
-	write_matrix(tval,tsave,"t" + name + ".csv");
-	write_matrix(xt,N,tsave,"x" + name + ".csv");
-	write_matrix(mean,tsave,"mean"+name+".csv");	
-
-	return 0;
-}
-
-
+*/

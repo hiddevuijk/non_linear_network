@@ -72,7 +72,7 @@ int main()
 
 	vector<char> EI(N,'I');
 	for(int i=0;i<f*N;++i) EI[i] = 'E';
-	shuffle(EI,N,r);
+//	shuffle(EI,N,r);
 
 
 	// create w, the matrix of connection strengths
