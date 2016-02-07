@@ -2,6 +2,7 @@
 #include "nr_headers/nr3.h"
 #include "nr_headers/ran.h"
 #include "nr_headers/fourier.h"
+#include "nr_headers/ludcmp.h"
 #include "nr_headers/correl.h"
 #include "nr_headers/spectrum.h"
 #include "nr_headers/stepper.h"
@@ -10,6 +11,8 @@
 #include "nr_headers/stepperdopr853.h"
 #include "nr_headers/stepperdopr5.h"
 #include "nr_headers/stepperstoerm.h"
+#include "nr_headers/stepperross.h"
+#include "nr_headers/steppersie.h"
 
 // other headers
 #include "headers/derivatives.h"
@@ -91,15 +94,17 @@ int main(int argc, char* argv[])
 
 	Ran r(seed);	// random number generator
 
-	Tanhr0 f(r0);
+	Tanhr0 f(r0,p);
 
 	// create connectivity matrix w
 	vector<vector<double> > w(N,vector<double> (N,0.0));
+	vector<vector<double> >* wptr = &w;
 
 	// state vector of the neurons
 	VecDoub x(N,0.0);
 	vector<double> tval(tsave,0.0);
 	vector<vector<double> > xt(N,tval);
+	vector<vector<double> > xtphi(N,tval);
 
 	// initialize  x w rand uniform(-1,1)
 	for(int i=0;i<N;++i) x[i] = 2*(0.5-r.doub());
@@ -108,24 +113,30 @@ int main(int argc, char* argv[])
 	else gen_rand_mat(w,N,std,r);
 
 	// start integration
-	NW nw(w,N,f);
+	NW nw(wptr,N,f);
+//	NW_ross nwr(w,N,f);
 	Output out;
 	for(int ti=0;(ti+1)<tsave;++ti){
-		Odeint<StepperDopr5<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
+		Odeint<StepperDopr853<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
+//		Odeint<StepperRoss<NW_ross> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nwr);
 		ode.integrate();
 		for(int i=0;i<N;++i) {
 			xt[i][ti] = x[i];
 			x[i] += sqrt_dt*std_noise*bm_transform(r);
 		}
-		tval[ti+1]= ti*dt;
+		tval[ti]= ti*dt;
 	}
 
 
 	int t2 = 2*pow2(tsave);
+
 	// correlations
 	VecDoub acorrn(tsave,0.0);
 	VecDoub	acorr(t2,0.0);
 	VecDoub psd(t2/2,0.0);
+	VecDoub acorrn_phi(tsave,0.0);
+	VecDoub acorr_phi(tsave,0.0);
+	VecDoub psd_phi(tsave,0.0);
 	VecDoub freq(t2/2,0.0);
 
 	// first mean then ...
@@ -133,27 +144,49 @@ int main(int argc, char* argv[])
 	VecDoub acorrn_mean(t2,0.0);
 	VecDoub acorr_mean(t2,0.0);
 	VecDoub psd_mean(t2/2,0.0);
+	VecDoub average_phi(t2,0.0);
+	VecDoub acorrn_mean_phi(t2,0.0);
+	VecDoub acorr_mean_phi(t2,0.0);
+	VecDoub psd_mean_phi(t2/2,0.0);
 
 	// temporary vec
 	VecDoub temp(t2,0.0);
+	VecDoub temp_phi(t2,0.0);
 
 	VecDoub acorrn_temp(t2,0.0);
 	VecDoub acorr_temp(t2,0.0);
 	VecDoub psd_temp(t2/2,0.0);
-
+	VecDoub acorrn_temp_phi(t2,0.0);
+	VecDoub acorr_temp_phi(t2,0.0);
+	VecDoub psd_temp_phi(t2,0.0);
+	
 
 	for(int i=0;i<N;++i) {
 		for(int ti=0;ti<tsave;++ti){
 			temp[ti] = xt[i][ti];
+			temp_phi[ti] = f(xt[i][ti]);
+
 			average_x[ti] += temp[ti]/(double)N;		
+			average_phi[ti] += temp_phi[ti]/(double)N;
 		}
 
 		autocorrel_norm(temp,tsave,acorrn_temp);
 		autocorrel_psd(temp,tsave,acorr_temp,psd_temp);
+
+		autocorrel_norm(temp_phi,tsave,acorrn_temp_phi);
+		autocorrel_psd(temp_phi,tsave,acorr_temp_phi,psd_temp_phi);
+		
 		for(int ti=0;ti<tsave;++ti){
 			acorrn[ti] += acorrn_temp[ti]/(double)N;
 			acorr[ti] += acorr_temp[ti]/(double)N;
-			if(ti<t2/2)	psd[ti] += psd_temp[ti]/=(double)N;
+
+			acorrn_phi[ti] += acorrn_temp_phi[ti]/(double)N;
+			acorr_phi[ti] += acorr_temp_phi[ti]/(double)N;
+
+			if(ti<t2/2)	{
+				psd[ti] += psd_temp[ti]/(double)N;
+				psd_phi[ti] += psd_temp_phi[ti]/(double)N;
+			}
 		}
 
 	}
@@ -161,20 +194,31 @@ int main(int argc, char* argv[])
 	autocorrel_norm(average_x,tsave,acorrn_mean);
 	autocorrel_psd(average_x,tsave,acorr_mean,psd_mean);
 
+	autocorrel_norm(average_phi,tsave,acorrn_mean_phi);
+	autocorrel_psd(average_phi,tsave,acorr_mean_phi,psd_mean_phi);
+
 	psd_frequencies(t2,dt,freq);
 
 	// write results
 	if(name!="") name = "_"+name;
 	write_matrix(xt,N,tsave,"x" + name + ".csv");
+	write_matrix(xtphi,N,tsave,"phix"+name+".csv");
 	write_matrix(tval,tsave,"t"+name+".csv");
 	write_matrix(average_x,tsave,"mean"+name+".csv");	
+	write_matrix(average_phi,tsave,"mean_phi"+name+".csv");
 	write_matrix(freq,t2/2,"freq"+name+".csv");
 	write_matrix(psd,t2/2,"psd"+name+".csv");
+	write_matrix(psd_phi,t2/2,"psd_phi"+name+".csv");
 	write_matrix(psd_mean,t2/2,"psd_mean"+name+".csv");
+	write_matrix(psd_mean_phi,t2/2,"psd_mean_phi"+name+".csv");
 	write_matrix(acorrn,tsave,"acorrn"+name+".csv");
+	write_matrix(acorrn_phi,tsave,"acorrn_phi"+name+".csv");
 	write_matrix(acorrn_mean,tsave,"acorrn_mean"+name+".csv");
+	write_matrix(acorrn_mean_phi,tsave,"acorrn_mean_phi"+name+".csv");
 	write_matrix(acorr,tsave,"acorr"+name+".csv");
+	write_matrix(acorr_phi,tsave,"acorr_phi"+name+".csv");
 	write_matrix(acorr_mean,tsave,"acorr_mean"+name+".csv");
+	write_matrix(acorr_mean_phi,tsave,"acorr_mean_phi"+name+".csv");
 	
 	return 0;
 }

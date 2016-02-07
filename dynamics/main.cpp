@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 	NW nw(w,N,f);
 	Output out;
 	for(int ti=0;(ti+1)<tsave;++ti){
-		Odeint<StepperDopr5<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
+		Odeint<StepperDopr853<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
 		ode.integrate();
 		for(int i=0;i<N;++i) {
 			xt[i][ti] = x[i];

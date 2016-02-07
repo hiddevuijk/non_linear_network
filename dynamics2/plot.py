@@ -16,7 +16,7 @@ if len(sys.argv) == 3:
 
 xt = np.genfromtxt("x"+name+".csv",delimiter=';')
 t = np.genfromtxt("t"+name+".csv",delimiter=';')
-ac = np.genfromtxt("acorr"+name+".csv",delimiter=';')
+ac = np.genfromtxt("acorrn"+name+".csv",delimiter=';')
 acm = np.genfromtxt("acorr_mean"+name+".csv",delimiter=';')
 m=np.genfromtxt("mean"+name+".csv",delimiter=';')
 
