@@ -165,6 +165,7 @@ int main(int argc, char* argv[])
 		for(int ti=0;ti<tsave;++ti){
 			temp[ti] = xt[i][ti];
 			temp_phi[ti] = f(xt[i][ti]);
+			xtphi[i][ti] = temp_phi[ti];
 
 			average_x[ti] += temp[ti]/(double)N;		
 			average_phi[ti] += temp_phi[ti]/(double)N;
