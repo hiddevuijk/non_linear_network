@@ -45,6 +45,8 @@ int main(int argc, char* argv[])
 	int p;			// 1= one pupulation, 2= exc. and inh. pop.
 	int tf;			// end time of integration
 	int tsave;		// number of timesteps to save
+	int tinit;		// integrate until tinit befor "real" integration starts
+
 	int seed;		// seed for the random generator
 	double g;		// gain parameter
 	
@@ -54,6 +56,7 @@ int main(int argc, char* argv[])
 	double a;		// if p=2 varE=g^2/(Na), varI=g^2/N
 					// if p=1 a is not used
 
+
 	double mean_noise;	// mean of the input noise
 	double var_noise;	// var of the input noise
 
@@ -62,7 +65,7 @@ int main(int argc, char* argv[])
 	double r0;		// r0 value in F-I functor ( def in function.h)
 
 	// read valuese of the variables from input file
-	read_input(N,p,g,tf,tsave,r0,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
+	read_input(N,p,g,tf,tsave,tinit,r0,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
 
 	// integration settings
 	double atol;
@@ -76,7 +79,7 @@ int main(int argc, char* argv[])
 	// over ride variable if user input is supplied
 	if(argc >1){
 		read_user_input(argc,argv,N,p,g,seed,tf,
-			tsave,r0,mean_noise,var_noise,
+			tsave,tinit,r0,mean_noise,var_noise,
 			meanE,meanI,a,db,name);
 	}
 
@@ -116,6 +119,10 @@ int main(int argc, char* argv[])
 	NW nw(wptr,N,f);
 //	NW_ross nwr(w,N,f);
 	Output out;
+
+	Output out_init;
+	Odeint<StepperDopr853<NW> > ode_start(x,0,tinit,atol,rtol,h1,hmin,out_init,nw);
+
 	for(int ti=0;(ti+1)<tsave;++ti){
 		Odeint<StepperDopr853<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
 //		Odeint<StepperRoss<NW_ross> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nwr);
@@ -126,7 +133,7 @@ int main(int argc, char* argv[])
 		}
 		tval[ti]= ti*dt;
 	}
-
+	tval[tsave-1] = tf;
 
 	int t2 = 2*pow2(tsave);
 

@@ -12,7 +12,7 @@ std::string remove_text(std::string str)
 }
 
 void read_input(int& N,int& p, double& g,int& tf, int& tsave,
-		double& r0, double& mean_noise, double& var_noise,
+		int& tinit,double& r0, double& mean_noise, double& var_noise,
 		double& meanE, double& meanI, double& a,int&db,
 		int& seed,std::string& name,std::string infile_name)
 {
@@ -39,6 +39,9 @@ void read_input(int& N,int& p, double& g,int& tf, int& tsave,
 	temp = remove_text(temp);
 	tsave = std::stoi(temp);
 
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	tinit = std::stoi(temp);
 	std::getline(input,temp);
 	temp = remove_text(temp);
 	r0 = std::stod(temp);

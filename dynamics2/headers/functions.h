@@ -15,13 +15,13 @@ public:
 		if(r0>0) {
 			if(p==2) {
 				if(x<=0){
-					return r0+tanh(x/r0);
+					return r0+r0*tanh(x/r0);
 				} else {
 					return r0+(2-r0)*tanh(x/(2-r0));
 				}
 			} else {
 				if(x<=0){
-					return tanh(x/r0);
+					return r0*tanh(x/r0);
 				} else {
 					return (2-r0)*tanh(x/(2-r0));
 				}
