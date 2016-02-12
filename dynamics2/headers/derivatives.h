@@ -23,7 +23,7 @@ struct NW {
 	}
 };
 
-
+/// checl before use!!!!!
 struct NW_ross {
 	std::vector<std::vector<double> > w;
 	int N;

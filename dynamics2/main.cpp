@@ -4,7 +4,6 @@
 #include "nr_headers/fourier.h"
 #include "nr_headers/ludcmp.h"
 #include "nr_headers/correl.h"
-#include "nr_headers/spectrum.h"
 #include "nr_headers/stepper.h"
 #include "nr_headers/stepperbs.h"
 #include "nr_headers/odeint.h"
@@ -102,17 +101,19 @@ int main(int argc, char* argv[])
 	// create connectivity matrix w
 	vector<vector<double> > w(N,vector<double> (N,0.0));
 	vector<vector<double> >* wptr = &w;
+	vector<char> EI(N,'E');
 
 	// state vector of the neurons
 	VecDoub x(N,0.0);
 	vector<double> tval(tsave,0.0);
 	vector<vector<double> > xt(N,tval);
 	vector<vector<double> > xtphi(N,tval);
+	vector<vector<double> > dh(N,tval);
 
 	// initialize  x w rand uniform(-1,1)
 	for(int i=0;i<N;++i) x[i] = 2*(0.5-r.doub());
 	//initialize w
-	if(p==2) gen_rand_mat(w,N,meanE,meanI,stdE,stdI,db,r);
+	if(p==2) gen_rand_mat(w,N,meanE,meanI,stdE,stdI,db,EI,r);
 	else gen_rand_mat(w,N,std,r);
 
 	// start integration
@@ -129,12 +130,23 @@ int main(int argc, char* argv[])
 		ode.integrate();
 		for(int i=0;i<N;++i) {
 			xt[i][ti] = x[i];
+			xtphi[i][ti] = f(xt[i][ti]);
+
 			x[i] += sqrt_dt*std_noise*bm_transform(r);
 		}
 		tval[ti]= ti*dt;
 	}
 	tval[tsave-1] = tf;
 
+
+/*
+	End of the integration of the equations.
+	From here only analysis.
+*/
+
+	// pow2 returns the smalles number that is a power 
+	// of 2 and is larger than tsave. Muliplied by 2
+	// for zero-padding for autocorrelations and PSD
 	int t2 = 2*pow2(tsave);
 
 	// correlations
@@ -145,6 +157,12 @@ int main(int argc, char* argv[])
 	VecDoub acorr_phi(tsave,0.0);
 	VecDoub psd_phi(tsave,0.0);
 	VecDoub freq(t2/2,0.0);
+
+	VecDoub dh_temp(t2,0.0);
+	VecDoub acorr_dh_temp(t2,0.0);
+	VecDoub acorr_dh(tsave,0.0);
+	VecDoub psd_dh(tsave,0.0);
+	VecDoub psd_dh_temp(t2,0.0);
 
 	// first mean then ...
 	VecDoub average_x(t2,0.0);
@@ -166,16 +184,33 @@ int main(int argc, char* argv[])
 	VecDoub acorrn_temp_phi(t2,0.0);
 	VecDoub acorr_temp_phi(t2,0.0);
 	VecDoub psd_temp_phi(t2,0.0);
-	
+
+	//population means
+	double pmE = 0;
+	double pmI = 0;	
+	for(int i=0;i<N;++i){
+		for(int ti=0;ti<tsave;++ti) {
+			if(EI[i]=='E') pmE += xt[i][ti]/(N*tsave);
+			else pmI += xt[i][ti]/(N*tsave);
+		}
+	}
+
+	// pmi is either pmE or pmI, depending on i
+	double pmi = 0;
 
 	for(int i=0;i<N;++i) {
+		if(EI[i] == 'E') pmi = pmE;
+		else pmi = pmI;
+
 		for(int ti=0;ti<tsave;++ti){
 			temp[ti] = xt[i][ti];
-			temp_phi[ti] = f(xt[i][ti]);
-			xtphi[i][ti] = temp_phi[ti];
+			temp_phi[ti] = xtphi[i][ti];
 
 			average_x[ti] += temp[ti]/(double)N;		
 			average_phi[ti] += temp_phi[ti]/(double)N;
+
+			dh_temp[ti] = temp[ti] - pmi;
+			dh[i][ti] = dh_temp[ti];
 		}
 
 		autocorrel_norm(temp,tsave,acorrn_temp);
@@ -183,7 +218,10 @@ int main(int argc, char* argv[])
 
 		autocorrel_norm(temp_phi,tsave,acorrn_temp_phi);
 		autocorrel_psd(temp_phi,tsave,acorr_temp_phi,psd_temp_phi);
-		
+
+		autocorrel_psd(dh_temp,tsave,acorr_dh_temp,psd_dh_temp);
+		double dh_temp0 = dh_temp[0];		
+
 		for(int ti=0;ti<tsave;++ti){
 			acorrn[ti] += acorrn_temp[ti]/(double)N;
 			acorr[ti] += acorr_temp[ti]/(double)N;
@@ -191,13 +229,16 @@ int main(int argc, char* argv[])
 			acorrn_phi[ti] += acorrn_temp_phi[ti]/(double)N;
 			acorr_phi[ti] += acorr_temp_phi[ti]/(double)N;
 
+			acorr_dh[ti] += acorr_dh_temp[ti]/(dh_temp0*N);
+
 			if(ti<t2/2)	{
 				psd[ti] += psd_temp[ti]/(double)N;
 				psd_phi[ti] += psd_temp_phi[ti]/(double)N;
+				psd_dh[ti] += psd_dh_temp[ti]/(double)N;
 			}
 		}
 
-	}
+	}	
 
 	autocorrel_norm(average_x,tsave,acorrn_mean);
 	autocorrel_psd(average_x,tsave,acorr_mean,psd_mean);
@@ -227,45 +268,8 @@ int main(int argc, char* argv[])
 	write_matrix(acorr_phi,tsave,"acorr_phi"+name+".csv");
 	write_matrix(acorr_mean,tsave,"acorr_mean"+name+".csv");
 	write_matrix(acorr_mean_phi,tsave,"acorr_mean_phi"+name+".csv");
-	
+	write_matrix(acorr_dh,tsave,"acorr_dh"+name+".csv");
+	write_matrix(psd_dh,tsave,"psd_dh"+name+".csv");
+	write_matrix(dh,N,tsave,"dh"+name+".csv");	
 	return 0;
 }
-
-/*
-	VecDoub temp(t2,0.0);
-	VecDoub acorr_temp(t2,0.0);
-	VecDoub acorr(t2,0.0);
-	VecDoub psd(t2,0.0);
-
-	VecDoub mean(t2,0.0);
-	VecDoub acorr_mean(t2,0.0);
-	VecDoub psd_mean(t2,0.0);
-
-	double mean_avg =0;
-	for(int i=0;i<N;++i) {
-		double temp_avg = 0;
-		for(int ti=0;ti<tsave;++ti) {
-			temp[ti] = xt[i][ti];
-			temp_avg += temp[ti];
-
-			mean[ti] += xt[i][ti]/(double)N;
-		}
-
-		for(int ti=0;ti<tsave;++ti)
-			temp[ti] -= temp_avg/(double)tsave;
-
-		correl(temp,temp,acorr_temp);
-		
-		for(int ti=0;ti<t2;++ti)
-			acorr[ti] += acorr_temp[ti]/(N*acorr_temp[0]);
-	}
-
-	for(int ti=0;ti<tsave;++ti) mean_avg += mean[ti];
-	for(int ti=0;ti<tsave;++ti)
-		mean[ti] -= mean_avg/(double)tsave;
-
-	correl(mean,mean,acorr_mean);
-	double acorr_mean0 = acorr_mean[0];
-	for(int ti=0;ti<t2;++ti)
-		acorr_mean[ti] /= acorr_mean0;
-*/
