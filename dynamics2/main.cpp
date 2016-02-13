@@ -10,8 +10,6 @@
 #include "nr_headers/stepperdopr853.h"
 #include "nr_headers/stepperdopr5.h"
 #include "nr_headers/stepperstoerm.h"
-#include "nr_headers/stepperross.h"
-#include "nr_headers/steppersie.h"
 
 // other headers
 #include "headers/derivatives.h"
@@ -61,11 +59,11 @@ int main(int argc, char* argv[])
 
 	int db;			// if db=1 detailed balence contition satisfied
 
-	string func;	// xhich function to use from FI
-	double v;		// v value in F-I functor ( def in function.h)
+	double r0;
 
 	// read valuese of the variables from input file
-	read_input(N,p,g,tf,tsave,tinit,v,func,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
+	read_input(N,p,g,tf,tsave,tinit,r0,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
+
 
 	// integration settings
 	double atol;
@@ -79,10 +77,12 @@ int main(int argc, char* argv[])
 	// over ride variable if user input is supplied
 	if(argc >1){
 		read_user_input(argc,argv,N,p,g,seed,tf,
-			tsave,tinit,v,func,mean_noise,var_noise,
+			tsave,tinit,r0,mean_noise,var_noise,
 			meanE,meanI,a,db,name);
 	}
 
+
+	if(name!="") name = "_"+name;
 
 	meanE /=sqrt(N);
 	meanI /=sqrt(N);
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 
 	Ran r(seed);	// random number generator
 
-	FI f(v,func);
+	FI f(r0,p);
 
 	// create connectivity matrix w
 	vector<vector<double> > w(N,vector<double> (N,0.0));
@@ -118,26 +118,44 @@ int main(int argc, char* argv[])
 	else gen_rand_mat(w,N,std,r);
 
 	// start integration
-	NW nw(wptr,N,f);
-	Output out;
 
+	NW nw(wptr,N,f);
+
+	// integrate until tinit, no save.
 	Output out_init;
 	Odeint<StepperDopr853<NW> > ode_start(x,0,tinit,atol,rtol,h1,hmin,out_init,nw);
 
-	for(int ti=0;(ti+1)<tsave;++ti){
-		Odeint<StepperDopr853<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
-		ode.integrate();
-		for(int i=0;i<N;++i) {
-			xt[i][ti] = x[i];
-			phixt[i][ti] = f(xt[i][ti]);
+	// if noise is added, integrate in steps and add noise each step
+	// else integrate in one go, using  out's save option
+	if(mean_noise!=0. and std_noise !=0) {
+		Output out;
 
-			x[i] += sqrt_dt*std_noise*bm_transform(r);
+		for(int ti=0;(ti+1)<tsave;++ti){
+			Odeint<StepperDopr853<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
+			ode.integrate();
+			for(int i=0;i<N;++i) {
+				xt[i][ti] = x[i];
+				phixt[i][ti] = f(xt[i][ti]);
+
+				x[i] += sqrt_dt*std_noise*bm_transform(r);
+			}
+			tval[ti]= ti*dt;
 		}
-		tval[ti]= ti*dt;
-	}
-	tval[tsave-1] = tf;
+		tval[tsave-1] = tf;
+	} else {
+		Output out(tsave);
+		Odeint<StepperDopr853<NW> > ode(x,0,tf,atol,rtol,h1,hmin,out,nw);
+		ode.integrate();
+		// copy result in xt,phixt and tval
+		for(int ti=0;ti<tsave;++ti) {
+			tval[ti] = out.xsave[ti];
+			for(int i=0;i<N;++i) {
+				xt[i][ti] = out.ysave[i][ti];
+				phixt[i][ti] = f(xt[i][ti]);
+			}
+		}
 
-
+	}		
 /*
 	End of the integration of the equations.
 	From here only analysis.
@@ -161,7 +179,6 @@ int main(int argc, char* argv[])
 		acorr_analysis(xt,phixt,EI,deltaE,deltaI,psd_deltaE,psd_deltaI,CE,CI,psd_CE,psd_CI,N,Ne,Ni,tsave,t2);
 		
 		// write results
-		if(name!="") name = "_"+name;
 		write_matrix(deltaE,tsave,"deltaE"+name+".csv");
 		write_matrix(deltaI,tsave,"deltaI"+name+".csv");
 		write_matrix(CE,tsave,"CE"+name+".csv");
@@ -180,7 +197,6 @@ int main(int argc, char* argv[])
 		acorr_analysis(xt,phixt,delta,psd_delta,C,psd_C,N,tsave,t2);
 
 		// write results
-		if(name!="") name = "_"+name;
 		write_matrix(delta,tsave,"delta"+name+".csv");
 		write_matrix(C,tsave,"C"+name+".csv");
 		write_matrix(psd_delta,t2/2,"psd_delta"+name+".csv");
@@ -192,7 +208,6 @@ int main(int argc, char* argv[])
 	psd_frequencies(t2,dt,freq);
 
 	// write  the rest of the results
-	if(name!="") name = "_"+name;
 	write_matrix(xt,N,tsave,"x" + name + ".csv");
 	write_matrix(phixt,N,tsave,"phix"+name+".csv");
 	write_matrix(tval,tsave,"t"+name+".csv");
@@ -201,104 +216,4 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-/*
 
-	// correlations
-	VecDoub acorrn(tsave,0.0);
-	VecDoub	acorr(t2,0.0);
-	VecDoub psd(t2/2,0.0);
-	VecDoub acorrn_phi(tsave,0.0);
-	VecDoub acorr_phi(tsave,0.0);
-	VecDoub psd_phi(tsave,0.0);
-	VecDoub freq(t2/2,0.0);
-
-	VecDoub dh_temp(t2,0.0);
-	VecDoub acorr_dh_temp(t2,0.0);
-	VecDoub acorr_dh(tsave,0.0);
-	VecDoub psd_dh(tsave,0.0);
-	VecDoub psd_dh_temp(t2,0.0);
-
-	// first mean then ...
-	VecDoub average_x(t2,0.0);
-	VecDoub acorrn_mean(t2,0.0);
-	VecDoub acorr_mean(t2,0.0);
-	VecDoub psd_mean(t2/2,0.0);
-	VecDoub average_phi(t2,0.0);
-	VecDoub acorrn_mean_phi(t2,0.0);
-	VecDoub acorr_mean_phi(t2,0.0);
-	VecDoub psd_mean_phi(t2/2,0.0);
-
-	// temporary vec
-	VecDoub temp(t2,0.0);
-	VecDoub temp_phi(t2,0.0);
-
-	VecDoub acorrn_temp(t2,0.0);
-	VecDoub acorr_temp(t2,0.0);
-	VecDoub psd_temp(t2/2,0.0);
-	VecDoub acorrn_temp_phi(t2,0.0);
-	VecDoub acorr_temp_phi(t2,0.0);
-	VecDoub psd_temp_phi(t2,0.0);
-
-	//population means
-	double pmE = 0;
-	double pmI = 0;	
-	for(int i=0;i<N;++i){
-		for(int ti=0;ti<tsave;++ti) {
-			if(EI[i]=='E') pmE += xt[i][ti]/(N*tsave);
-			else pmI += xt[i][ti]/(N*tsave);
-		}
-	}
-
-	// pmi is either pmE or pmI, depending on i
-	double pmi = 0;
-
-	for(int i=0;i<N;++i) {
-		if(EI[i] == 'E') pmi = pmE;
-		else pmi = pmI;
-
-		for(int ti=0;ti<tsave;++ti){
-			temp[ti] = xt[i][ti];
-			temp_phi[ti] = xtphi[i][ti];
-
-			average_x[ti] += temp[ti]/(double)N;		
-			average_phi[ti] += temp_phi[ti]/(double)N;
-
-			dh_temp[ti] = temp[ti] - pmi;
-			dh[i][ti] = dh_temp[ti];
-		}
-
-		autocorrel_norm(temp,tsave,acorrn_temp);
-		autocorrel_psd(temp,tsave,acorr_temp,psd_temp);
-
-		autocorrel_norm(temp_phi,tsave,acorrn_temp_phi);
-		autocorrel_psd(temp_phi,tsave,acorr_temp_phi,psd_temp_phi);
-
-		autocorrel_psd(dh_temp,tsave,acorr_dh_temp,psd_dh_temp);
-
-		for(int ti=0;ti<tsave;++ti){
-			acorrn[ti] += acorrn_temp[ti]/(double)N;
-			acorr[ti] += acorr_temp[ti]/(double)N;
-
-			acorrn_phi[ti] += acorrn_temp_phi[ti]/(double)N;
-			acorr_phi[ti] += acorr_temp_phi[ti]/(double)N;
-
-			acorr_dh[ti] += acorr_dh_temp[ti]/(double)N;
-
-			if(ti<t2/2)	{
-				psd[ti] += psd_temp[ti]/(double)N;
-				psd_phi[ti] += psd_temp_phi[ti]/(double)N;
-				psd_dh[ti] += psd_dh_temp[ti]/(double)N;
-			}
-		}
-
-	}	
-
-	autocorrel_norm(average_x,tsave,acorrn_mean);
-	autocorrel_psd(average_x,tsave,acorr_mean,psd_mean);
-
-	autocorrel_norm(average_phi,tsave,acorrn_mean_phi);
-	autocorrel_psd(average_phi,tsave,acorr_mean_phi,psd_mean_phi);
-
-	psd_frequencies(t2,dt,freq);
-
-*/

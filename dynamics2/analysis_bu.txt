@@ -1,0 +1,101 @@
+/*
+
+	// correlations
+	VecDoub acorrn(tsave,0.0);
+	VecDoub	acorr(t2,0.0);
+	VecDoub psd(t2/2,0.0);
+	VecDoub acorrn_phi(tsave,0.0);
+	VecDoub acorr_phi(tsave,0.0);
+	VecDoub psd_phi(tsave,0.0);
+	VecDoub freq(t2/2,0.0);
+
+	VecDoub dh_temp(t2,0.0);
+	VecDoub acorr_dh_temp(t2,0.0);
+	VecDoub acorr_dh(tsave,0.0);
+	VecDoub psd_dh(tsave,0.0);
+	VecDoub psd_dh_temp(t2,0.0);
+
+	// first mean then ...
+	VecDoub average_x(t2,0.0);
+	VecDoub acorrn_mean(t2,0.0);
+	VecDoub acorr_mean(t2,0.0);
+	VecDoub psd_mean(t2/2,0.0);
+	VecDoub average_phi(t2,0.0);
+	VecDoub acorrn_mean_phi(t2,0.0);
+	VecDoub acorr_mean_phi(t2,0.0);
+	VecDoub psd_mean_phi(t2/2,0.0);
+
+	// temporary vec
+	VecDoub temp(t2,0.0);
+	VecDoub temp_phi(t2,0.0);
+
+	VecDoub acorrn_temp(t2,0.0);
+	VecDoub acorr_temp(t2,0.0);
+	VecDoub psd_temp(t2/2,0.0);
+	VecDoub acorrn_temp_phi(t2,0.0);
+	VecDoub acorr_temp_phi(t2,0.0);
+	VecDoub psd_temp_phi(t2,0.0);
+
+	//population means
+	double pmE = 0;
+	double pmI = 0;	
+	for(int i=0;i<N;++i){
+		for(int ti=0;ti<tsave;++ti) {
+			if(EI[i]=='E') pmE += xt[i][ti]/(N*tsave);
+			else pmI += xt[i][ti]/(N*tsave);
+		}
+	}
+
+	// pmi is either pmE or pmI, depending on i
+	double pmi = 0;
+
+	for(int i=0;i<N;++i) {
+		if(EI[i] == 'E') pmi = pmE;
+		else pmi = pmI;
+
+		for(int ti=0;ti<tsave;++ti){
+			temp[ti] = xt[i][ti];
+			temp_phi[ti] = xtphi[i][ti];
+
+			average_x[ti] += temp[ti]/(double)N;		
+			average_phi[ti] += temp_phi[ti]/(double)N;
+
+			dh_temp[ti] = temp[ti] - pmi;
+			dh[i][ti] = dh_temp[ti];
+		}
+
+		autocorrel_norm(temp,tsave,acorrn_temp);
+		autocorrel_psd(temp,tsave,acorr_temp,psd_temp);
+
+		autocorrel_norm(temp_phi,tsave,acorrn_temp_phi);
+		autocorrel_psd(temp_phi,tsave,acorr_temp_phi,psd_temp_phi);
+
+		autocorrel_psd(dh_temp,tsave,acorr_dh_temp,psd_dh_temp);
+
+		for(int ti=0;ti<tsave;++ti){
+			acorrn[ti] += acorrn_temp[ti]/(double)N;
+			acorr[ti] += acorr_temp[ti]/(double)N;
+
+			acorrn_phi[ti] += acorrn_temp_phi[ti]/(double)N;
+			acorr_phi[ti] += acorr_temp_phi[ti]/(double)N;
+
+			acorr_dh[ti] += acorr_dh_temp[ti]/(double)N;
+
+			if(ti<t2/2)	{
+				psd[ti] += psd_temp[ti]/(double)N;
+				psd_phi[ti] += psd_temp_phi[ti]/(double)N;
+				psd_dh[ti] += psd_dh_temp[ti]/(double)N;
+			}
+		}
+
+	}	
+
+	autocorrel_norm(average_x,tsave,acorrn_mean);
+	autocorrel_psd(average_x,tsave,acorr_mean,psd_mean);
+
+	autocorrel_norm(average_phi,tsave,acorrn_mean_phi);
+	autocorrel_psd(average_phi,tsave,acorr_mean_phi,psd_mean_phi);
+
+	psd_frequencies(t2,dt,freq);
+
+*
