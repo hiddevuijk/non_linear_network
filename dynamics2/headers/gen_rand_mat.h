@@ -17,11 +17,15 @@ void gen_rand_mat(std::vector<std::vector<double> >& w,
 
 void gen_rand_mat(std::vector<std::vector<double> >& w,
 				int N, double meanE, double meanI, double stdE,
-				double stdI, int db,std::vector<char> EI, Ran& r)
+				double stdI, int db,std::vector<char> EI,int& Ne,
+				int& Ni, Ran& r)
 {
 	double f;
 	if( meanI-meanE == 0) f = 0.5;
 	else f = meanI/(meanI-meanE);
+
+	Ne = f*N;
+	Ni = N-Ne;
 
 	for(int i=0;i<f*N;++i) EI[i] = 'E';
 	for(int i=f*N;i<N;++i) EI[i] = 'I';

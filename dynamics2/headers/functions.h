@@ -1,72 +1,50 @@
 #ifndef GUARD_functions_h
 #define GUARD_functions_h
 
+#include <string>
+#include <math.h>
+
 // transfer functions
 
-struct Tanhr0
-{
+struct FI {
 private:
-	double r0;
-	int p;
+	double v;
+	std::string f;
 public:
-	Tanhr0(double r00, int pp) : r0(r00), p(pp) {}
+	FI(double vv, std::string ff) : v(vv), f(ff) {}
 
 	double operator()(double x){
-		if(r0>0) {
-			if(p==2) {
-				if(x<=0){
-					return r0+r0*tanh(x/r0);
-				} else {
-					return r0+(2-r0)*tanh(x/(2-r0));
-				}
+		if(f=="tanh0") {
+			if(x<=0){
+				return v+v*tanh(x/v);
 			} else {
-				if(x<=0){
-					return r0*tanh(x/r0);
-				} else {
-					return (2-r0)*tanh(x/(2-r0));
-				}
+				return v+(2-v)*tanh(x/(2-v));
+			}
+		} else if(f=="tanh1"){
+			if(x<=0){
+				return v*tanh(x/v);
+			} else {
+				return (2-v)*tanh(x/(2-v));
+			}
+		}
+		else if(f=="th_lin") {
+			if(x<=0) {
+				return 0;
+			} else {
+				return pow(x,v);
 			}
 		} else {
-			if(x<=0) return 0;
-			else if(x>=1) return 1;
-			else return x;
+			if(x<=0){
+				return v*tanh(x/v);
+			} else {
+				return (2-v)*tanh(x/(2-v));
+			}
 		}
-	}
 
-	double derivative(double x) {
-		if(r0>0) {
-			if(x<=0)
-				return 1./(cosh(x/r0)*cosh(x/r0));
-			else
-				return 1./(cosh(x/(2-r0))*cosh(x/(2-r0)));
-		} else {
-			if(x < 1 && x >0 )
-				return 1.;
-			else
-				return 0.;
-		}
 	}
 };
 
-double th_linear(double x)
-{
-	if(x<=0) return 0;
-	else if(x>0 and x<1) return x;
-	else return 1;
-}
 
-double tanh01(double x)
-{
-	
-	if(x<=0) return 0.1*tanh(x/0.1);
-	else return 1.9*tanh(x/1.9);
-}
-
-double tanh001(double x)
-{
-	if(x<=0) return 0.1+0.1*tanh(x/0.1);
-	else return 0.1+1.9*tanh(x/1.9);
-}
 
 
 

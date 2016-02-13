@@ -23,7 +23,7 @@
 #include "headers/other.h"
 #include "headers/gen_rand_mat.h"
 #include "headers/acorr.h"
-#include "headers/gc.h"
+#include "headers/acorr_analysis.h"
 
 //std headers
 #include <vector>
@@ -61,10 +61,11 @@ int main(int argc, char* argv[])
 
 	int db;			// if db=1 detailed balence contition satisfied
 
-	double r0;		// r0 value in F-I functor ( def in function.h)
+	string func;	// xhich function to use from FI
+	double v;		// v value in F-I functor ( def in function.h)
 
 	// read valuese of the variables from input file
-	read_input(N,p,g,tf,tsave,tinit,r0,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
+	read_input(N,p,g,tf,tsave,tinit,v,func,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
 
 	// integration settings
 	double atol;
@@ -78,7 +79,7 @@ int main(int argc, char* argv[])
 	// over ride variable if user input is supplied
 	if(argc >1){
 		read_user_input(argc,argv,N,p,g,seed,tf,
-			tsave,tinit,r0,mean_noise,var_noise,
+			tsave,tinit,v,func,mean_noise,var_noise,
 			meanE,meanI,a,db,name);
 	}
 
@@ -92,11 +93,12 @@ int main(int argc, char* argv[])
 	double std  = g/sqrt((double)N);
 	double stdE = g/sqrt(N*a);
 	double stdI = g/sqrt(N);
-
+	int Ne = N; // number in exc. population
+	int Ni =0; // number in inh. pop.
 
 	Ran r(seed);	// random number generator
 
-	Tanhr0 f(r0,p);
+	FI f(v,func);
 
 	// create connectivity matrix w
 	vector<vector<double> > w(N,vector<double> (N,0.0));
@@ -107,18 +109,16 @@ int main(int argc, char* argv[])
 	VecDoub x(N,0.0);
 	vector<double> tval(tsave,0.0);
 	vector<vector<double> > xt(N,tval);
-	vector<vector<double> > xtphi(N,tval);
-	vector<vector<double> > dh(N,tval);
+	vector<vector<double> > phixt(N,tval);
 
 	// initialize  x w rand uniform(-1,1)
 	for(int i=0;i<N;++i) x[i] = 2*(0.5-r.doub());
 	//initialize w
-	if(p==2) gen_rand_mat(w,N,meanE,meanI,stdE,stdI,db,EI,r);
+	if(p==2) gen_rand_mat(w,N,meanE,meanI,stdE,stdI,db,EI,Ne,Ni,r);
 	else gen_rand_mat(w,N,std,r);
 
 	// start integration
 	NW nw(wptr,N,f);
-//	NW_ross nwr(w,N,f);
 	Output out;
 
 	Output out_init;
@@ -126,11 +126,10 @@ int main(int argc, char* argv[])
 
 	for(int ti=0;(ti+1)<tsave;++ti){
 		Odeint<StepperDopr853<NW> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nw);
-//		Odeint<StepperRoss<NW_ross> > ode(x,ti*dt,(ti+1)*dt,atol,rtol,h1,hmin,out,nwr);
 		ode.integrate();
 		for(int i=0;i<N;++i) {
 			xt[i][ti] = x[i];
-			xtphi[i][ti] = f(xt[i][ti]);
+			phixt[i][ti] = f(xt[i][ti]);
 
 			x[i] += sqrt_dt*std_noise*bm_transform(r);
 		}
@@ -148,6 +147,61 @@ int main(int argc, char* argv[])
 	// of 2 and is larger than tsave. Muliplied by 2
 	// for zero-padding for autocorrelations and PSD
 	int t2 = 2*pow2(tsave);
+
+	if(p==2) {
+		VecDoub deltaE(tsave,0.0);
+		VecDoub	deltaI(tsave,0.0);
+		VecDoub psd_deltaE(t2/2,0.0);
+		VecDoub psd_deltaI(t2/2,0.0);
+		VecDoub CE(tsave,0.0);
+		VecDoub CI(tsave,0.0);
+		VecDoub psd_CE(t2/2,0.0);
+		VecDoub psd_CI(t2/2,0.0);
+
+		acorr_analysis(xt,phixt,EI,deltaE,deltaI,psd_deltaE,psd_deltaI,CE,CI,psd_CE,psd_CI,N,Ne,Ni,tsave,t2);
+		
+		// write results
+		if(name!="") name = "_"+name;
+		write_matrix(deltaE,tsave,"deltaE"+name+".csv");
+		write_matrix(deltaI,tsave,"deltaI"+name+".csv");
+		write_matrix(CE,tsave,"CE"+name+".csv");
+		write_matrix(CI,tsave,"CI"+name+".csv");
+		write_matrix(psd_deltaE,t2/2,"psd_deltaE"+name+".csv");
+		write_matrix(psd_deltaI,t2/2,"psd_deltaI"+name+".csv");
+		write_matrix(psd_CE,t2/2,"psd_CE"+name+".csv");
+		write_matrix(psd_CI,t2/2,"psd_CI"+name+".csv");
+
+	} else {
+		VecDoub delta(tsave,0.0);
+		VecDoub psd_delta(t2/2,0.0);
+		VecDoub C(tsave,0.0);
+		VecDoub psd_C(t2/2,0.0);
+
+		acorr_analysis(xt,phixt,delta,psd_delta,C,psd_C,N,tsave,t2);
+
+		// write results
+		if(name!="") name = "_"+name;
+		write_matrix(delta,tsave,"delta"+name+".csv");
+		write_matrix(C,tsave,"C"+name+".csv");
+		write_matrix(psd_delta,t2/2,"psd_delta"+name+".csv");
+		write_matrix(psd_C,t2/2,"psd_C"+name+".csv");
+	}
+
+
+	VecDoub freq(t2/2,0.0);
+	psd_frequencies(t2,dt,freq);
+
+	// write  the rest of the results
+	if(name!="") name = "_"+name;
+	write_matrix(xt,N,tsave,"x" + name + ".csv");
+	write_matrix(phixt,N,tsave,"phix"+name+".csv");
+	write_matrix(tval,tsave,"t"+name+".csv");
+	write_matrix(freq,t2/2,"f"+name+".csv");
+
+	return 0;
+}
+
+/*
 
 	// correlations
 	VecDoub acorrn(tsave,0.0);
@@ -220,7 +274,6 @@ int main(int argc, char* argv[])
 		autocorrel_psd(temp_phi,tsave,acorr_temp_phi,psd_temp_phi);
 
 		autocorrel_psd(dh_temp,tsave,acorr_dh_temp,psd_dh_temp);
-		double dh_temp0 = dh_temp[0];		
 
 		for(int ti=0;ti<tsave;++ti){
 			acorrn[ti] += acorrn_temp[ti]/(double)N;
@@ -229,7 +282,7 @@ int main(int argc, char* argv[])
 			acorrn_phi[ti] += acorrn_temp_phi[ti]/(double)N;
 			acorr_phi[ti] += acorr_temp_phi[ti]/(double)N;
 
-			acorr_dh[ti] += acorr_dh_temp[ti]/(dh_temp0*N);
+			acorr_dh[ti] += acorr_dh_temp[ti]/(double)N;
 
 			if(ti<t2/2)	{
 				psd[ti] += psd_temp[ti]/(double)N;
@@ -248,28 +301,4 @@ int main(int argc, char* argv[])
 
 	psd_frequencies(t2,dt,freq);
 
-	// write results
-	if(name!="") name = "_"+name;
-	write_matrix(xt,N,tsave,"x" + name + ".csv");
-	write_matrix(xtphi,N,tsave,"phix"+name+".csv");
-	write_matrix(tval,tsave,"t"+name+".csv");
-	write_matrix(average_x,tsave,"mean"+name+".csv");	
-	write_matrix(average_phi,tsave,"mean_phi"+name+".csv");
-	write_matrix(freq,t2/2,"freq"+name+".csv");
-	write_matrix(psd,t2/2,"psd"+name+".csv");
-	write_matrix(psd_phi,t2/2,"psd_phi"+name+".csv");
-	write_matrix(psd_mean,t2/2,"psd_mean"+name+".csv");
-	write_matrix(psd_mean_phi,t2/2,"psd_mean_phi"+name+".csv");
-	write_matrix(acorrn,tsave,"acorrn"+name+".csv");
-	write_matrix(acorrn_phi,tsave,"acorrn_phi"+name+".csv");
-	write_matrix(acorrn_mean,tsave,"acorrn_mean"+name+".csv");
-	write_matrix(acorrn_mean_phi,tsave,"acorrn_mean_phi"+name+".csv");
-	write_matrix(acorr,tsave,"acorr"+name+".csv");
-	write_matrix(acorr_phi,tsave,"acorr_phi"+name+".csv");
-	write_matrix(acorr_mean,tsave,"acorr_mean"+name+".csv");
-	write_matrix(acorr_mean_phi,tsave,"acorr_mean_phi"+name+".csv");
-	write_matrix(acorr_dh,tsave,"acorr_dh"+name+".csv");
-	write_matrix(psd_dh,tsave,"psd_dh"+name+".csv");
-	write_matrix(dh,N,tsave,"dh"+name+".csv");	
-	return 0;
-}
+*/

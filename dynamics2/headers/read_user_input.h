@@ -4,9 +4,10 @@
 #include <string>
 
 	// over ride variable if user input is supplied
-void read_user_input(int argc, char* argv[], int& N, int& p, double& g,
-		int& seed, int& tf, int& tsave,int& tinit, double& r0,
-		double& input_mean, double& input_var, double& meanE, double& meanI,
+void read_user_input(int argc, char* argv[], int& N, int& p,
+		double& g,int& seed, int& tf, int& tsave,int& tinit,
+		double& v, std::string& func,double& input_mean,
+		double& input_var, double& meanE, double& meanI,
 		double& a,int& db,std::string& name)
 {
 	for(int i=1;i<(argc-1);i+=2) {
@@ -77,12 +78,21 @@ void read_user_input(int argc, char* argv[], int& N, int& p, double& g,
 			}
 		}
 
-		else if(flag=="-r0"){
+		else if(flag=="-v"){
 			try{
-				r0 = stod(val);
+				v = stod(val);
 			} catch(exception& e) {
 				cerr << " error in " << argv[0]
 				<< ", "<< argv[i] << " not used."<<endl;
+			}
+		}
+
+		else if(flag=="-func"){
+			try {
+				func = val;
+			} catch(exception& e) {
+				cerr << " error in " << argv[0]
+				<< ", " << argv[i] << " not used." << endl;
 			}
 		}
 
