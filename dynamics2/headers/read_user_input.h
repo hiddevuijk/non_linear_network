@@ -5,7 +5,7 @@
 
 	// over ride variable if user input is supplied
 void read_user_input(int argc, char* argv[], int& N, int& p,
-		double& g,int& seed, int& tf, int& tsave,int& tinit,
+		double& g,int& seed, int& tf, int& tsave,double& tinit,
 		double& r0,double& input_mean,
 		double& input_var, double& meanE, double& meanI,
 		double& a,int& db,std::string& name)
@@ -71,7 +71,7 @@ void read_user_input(int argc, char* argv[], int& N, int& p,
 
 		else if(flag=="-tinit"){
 			try{
-				tinit = stoi(val);
+				tinit = stod(val);
 			} catch(exception& e) {
 				cerr << " error in " << argv[0]
 				<< ", "<< argv[i] << " not used."<<endl;

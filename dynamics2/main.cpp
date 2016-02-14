@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 	int p;			// 1= one pupulation, 2= exc. and inh. pop.
 	int tf;			// end time of integration
 	int tsave;		// number of timesteps to save
-	int tinit;		// integrate until tinit befor "real" integration starts
+	double tinit;	// integrate until tinit befor "real" integration starts
 
 	int seed;		// seed for the random generator
 	double g;		// gain parameter
@@ -121,9 +121,18 @@ int main(int argc, char* argv[])
 
 	NW nw(wptr,N,f);
 
+	cout << tinit << endl;
+	for(int i=0;i<5;++i)
+		cout << x[i] << endl;
+	cout << endl;
 	// integrate until tinit, no save.
 	Output out_init;
 	Odeint<StepperDopr853<NW> > ode_start(x,0,tinit,atol,rtol,h1,hmin,out_init,nw);
+	ode_start.integrate();
+	for(int i=0;i<5;++i)
+		cout << x[i] << endl;
+
+	return 0;
 
 	// if noise is added, integrate in steps and add noise each step
 	// else integrate in one go, using  out's save option
@@ -189,14 +198,20 @@ int main(int argc, char* argv[])
 		write_matrix(psd_CI,t2/2,"psd_CI"+name+".csv");
 
 		// transform delta to delta/delta0
-		for(int ti=(tsave-1);ti>=0;--ti)
-			delta[ti] /= delta[0];
-		write_matrix(delta,tsve,"deltaN"+name+".csv");
-
+		for(int ti=(tsave-1);ti>=0;--ti){
+			deltaE[ti] /= deltaE[0];
+			deltaI[ti] /= deltaI[0];
+		}
+		write_matrix(deltaE,tsave,"deltaEN"+name+".csv");
+		write_matrix(deltaI,tsave,"deltaIN"+name+".csv");
+	
 		// claculate q=1-delta/delta0
-		for(int ti=0;ti<tsave;++ti)
-			delta[ti] = 1-delta[ti];
-		write_matrix(delta,tsave,"q"+name+".csv");
+		for(int ti=0;ti<tsave;++ti){
+			deltaE[ti] = 1-deltaE[ti];
+			deltaI[ti] = 1-deltaI[ti];
+		}
+		write_matrix(deltaE,tsave,"qE"+name+".csv");
+		write_matrix(deltaI,tsave,"qI"+name+".csv");
 
 
 	} else {
@@ -216,7 +231,7 @@ int main(int argc, char* argv[])
 		// transform delta to delta/delta0
 		for(int ti=(tsave-1);ti>=0;--ti)
 			delta[ti] /= delta[0];
-		write_matrix(delta,tsve,"deltaN"+name+".csv");
+		write_matrix(delta,tsave,"deltaN"+name+".csv");
 
 		// claculate q=1-delta/delta0
 		for(int ti=0;ti<tsave;++ti)
