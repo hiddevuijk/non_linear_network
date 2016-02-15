@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
 
 	// if noise is added, integrate in steps and add noise each step
 	// else integrate in one go, using  out's save option
-	if(mean_noise!=0. and std_noise !=0) {
+	if(mean_noise!=0. or std_noise !=0) {
 		Output out;
 
 		for(int ti=0;(ti+1)<tsave;++ti){
