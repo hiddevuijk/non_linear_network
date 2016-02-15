@@ -118,21 +118,13 @@ int main(int argc, char* argv[])
 	else gen_rand_mat(w,N,std,r);
 
 	// start integration
-
 	NW nw(wptr,N,f);
 
-	cout << tinit << endl;
-	for(int i=0;i<5;++i)
-		cout << x[i] << endl;
-	cout << endl;
 	// integrate until tinit, no save.
 	Output out_init;
 	Odeint<StepperDopr853<NW> > ode_start(x,0,tinit,atol,rtol,h1,hmin,out_init,nw);
 	ode_start.integrate();
-	for(int i=0;i<5;++i)
-		cout << x[i] << endl;
 
-	return 0;
 
 	// if noise is added, integrate in steps and add noise each step
 	// else integrate in one go, using  out's save option

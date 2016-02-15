@@ -39,30 +39,22 @@ int main(int argc, char* argv[])
 	string name;	// output name
 
 	int N;			// number of neurons
-	int p;			// 1= one pupulation, 2= exc. and inh. pop.
 	int tf;			// end time of integration
 	int tsave;		// number of timesteps to save
 	int tinit;		// integrate until tinit befor "real" integration starts
 
 	int seed;		// seed for the random generator
 	double g;		// gain parameter
+	double gm;		// mean of J
 	
-	double meanE;	// mean of the exc. pop
-	double meanI;	// mean of the inh. pop
-
-	double a;		// if p=2 varE=g^2/(Na), varI=g^2/N
-					// if p=1 a is not used
-
-
 	double mean_noise;	// mean of the input noise
 	double var_noise;	// var of the input noise
 
-	int db;			// if db=1 detailed balence contition satisfied
 
-	double r0;
+	double v;
 
 	// read valuese of the variables from input file
-	read_input(N,p,g,tf,tsave,tinit,r0,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
+	read_input(N,g,gm,tf,tsave,tinit,v,mean_noise,var_noise,seed,name, "input.txt");
 
 
 	// integration settings
@@ -74,31 +66,20 @@ int main(int argc, char* argv[])
 	// read integration variables
 	read_integration_vars(atol,rtol,h1,hmin,"integration_variables.txt");
 
-	// over ride variable if user input is supplied
-	if(argc >1){
-		read_user_input(argc,argv,N,p,g,seed,tf,
-			tsave,tinit,r0,mean_noise,var_noise,
-			meanE,meanI,a,db,name);
-	}
-
 
 	if(name!="") name = "_"+name;
 
-	meanE /=sqrt(N);
-	meanI /=sqrt(N);
+	std = g/sqrt(N);
+	mean = gm/N;
+
 	mean_noise /= sqrt(N);
 	double std_noise = sqrt(var_noise);
 	double dt = tf/(double)tsave;
 	double sqrt_dt = sqrt(dt);
-	double std  = g/sqrt((double)N);
-	double stdE = g/sqrt(N*a);
-	double stdI = g/sqrt(N);
-	int Ne = N; // number in exc. population
-	int Ni =0; // number in inh. pop.
 
 	Ran r(seed);	// random number generator
 
-	FI f(r0,p);
+	Thlin f(v);
 
 	// create connectivity matrix w
 	vector<vector<double> > w(N,vector<double> (N,0.0));
