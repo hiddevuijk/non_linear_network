@@ -97,6 +97,7 @@ int main(int argc, char* argv[])
 	// integrate until tinit, no save.
 	Output out_init;
 	Odeint<StepperDopr853<NW> > ode_start(x,0,tinit,atol,rtol,h1,hmin,out_init,nw);
+	ode_start.integrate();
 
 	// if noise is added, integrate in steps and add noise each step
 	// else integrate in one go, using  out's save option
