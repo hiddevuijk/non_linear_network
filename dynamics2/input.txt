@@ -1,13 +1,13 @@
-N=10
+N=50
 p=2
 g=1.
-tf=10
-tsave=2
+tf=100
+tsave=100
 tinit=1
 r0=1
 mean_noise=0
 var_noise=.0
-meanE=4
+meanE=2
 meanI=-1
 a=0.01
 db=1

@@ -17,7 +17,7 @@ void gen_rand_mat(std::vector<std::vector<double> >& w,
 
 void gen_rand_mat(std::vector<std::vector<double> >& w,
 				int N, double meanE, double meanI, double stdE,
-				double stdI, int db,std::vector<char> EI,int& Ne,
+				double stdI, int db,std::vector<char>& EI,int& Ne,
 				int& Ni, Ran& r)
 {
 	double f;

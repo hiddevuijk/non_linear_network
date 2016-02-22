@@ -116,4 +116,5 @@ void acorr_analysis(const std::vector<std::vector<double> >& xt,
 	}
 
 }
+
 #endif
