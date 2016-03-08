@@ -205,6 +205,18 @@ int main(int argc, char* argv[])
 		write_matrix(deltaE,tsave,"qE"+name+".csv");
 		write_matrix(deltaI,tsave,"qI"+name+".csv");
 
+		VecDoub averageE(tsave);
+		VecDoub averageI(tsave);
+		for(int ti=0;ti<tsave;++ti) {
+			for(int i=0;i<N;++i) {
+				if(EI[i] == 'E')
+					averageE[ti] += xt[i][ti]/double(Ne);
+				if(EI[i] == 'I')
+					averageI[ti] += xt[i][ti]/double(Ni);
+			}
+		}
+		write_matrix(averageE,tsave,"averageE"+name+".csv");
+		write_matrix(averageI,tsave,"averageI"+name+".csv");
 
 	} else {
 		VecDoub delta(tsave,0.0);
@@ -230,6 +242,13 @@ int main(int argc, char* argv[])
 			delta[ti] = 1-delta[ti];
 		write_matrix(delta,tsave,"q"+name+".csv");
 
+		VecDoub average(tsave);
+		for(int ti=0;ti<tsave;++ti) {
+			for(int i=0;i<N;++i) {
+				average[ti] += xt[i][ti]/double(N);
+			}
+		}
+		write_matrix(average,tsave,"average"+name".csv");
 	}
 
 
