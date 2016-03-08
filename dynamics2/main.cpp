@@ -238,7 +238,7 @@ int main(int argc, char* argv[])
 
 	// write  the rest of the results
 	write_matrix(xt,N,tsave,"x" + name + ".csv");
-	write_matrix(phixt,N,tsave,"phix"+name+".csv");
+//	write_matrix(phixt,N,tsave,"phix"+name+".csv");
 	write_matrix(tval,tsave,"t"+name+".csv");
 	write_matrix(freq,t2/2,"f"+name+".csv");
 
