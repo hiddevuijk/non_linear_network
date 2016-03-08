@@ -58,13 +58,17 @@ void acorr_analysis( const std::vector<std::vector<double> >& xt,
 			}
 		}			
 
+		// normalize psd with variance
+		double varDelta = var_vec(temp_psd_delta,N);
+		double varC = var_vec(temp_psd_C,N);
+
 		for(int ti=0;ti<t2/2;++ti) {
 			if(EI[i]=='E') {
-				psd_deltaE[ti] += temp_psd_delta[ti]/(double)Ne;
-				psd_CE[ti] += temp_psd_C[ti]/(double)Ne;
+				psd_deltaE[ti] += temp_psd_delta[ti]/(Ne*varDelta);
+				psd_CE[ti] += temp_psd_C[ti]/(Ne*varC);
 			} else {
-				psd_deltaI[ti] += temp_psd_delta[ti]/(double)Ni;
-				psd_CI[ti] += temp_psd_C[ti]/(double)Ni;
+				psd_deltaI[ti] += temp_psd_delta[ti]/(Ni*varDelta);
+				psd_CI[ti] += temp_psd_C[ti]/(Ni*varC);
 			}
 		}	
 
@@ -108,9 +112,12 @@ void acorr_analysis(const std::vector<std::vector<double> >& xt,
 			C[ti] += temp_C[ti]/(double)N;
 		}			
 
+		// normalize with variance
+		varDelta = var_vec(temp_psd_delta,N);
+		varC = var_vec(temp_psd_C,N);
 		for(int ti=0;ti<t2/2;++ti) {
-			psd_delta[ti] += temp_psd_delta[ti]/(double)N;
-			psd_C[ti] += temp_psd_C[ti]/(double)N;
+			psd_delta[ti] += temp_psd_delta[ti]/(N*varDelta);
+			psd_C[ti] += temp_psd_C[ti]/(N*varC);
 		}	
 
 	}

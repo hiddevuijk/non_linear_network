@@ -20,6 +20,7 @@ double mean_vec(const VecDoub& vec, const int N)
 	for(int i=0;i<N;++i) mean += vec[i];
 	return mean/N;
 }
+
 double var_vec(const VecDoub& vec, const int N, const double& mean)
 {
 	double var=0;
@@ -27,7 +28,11 @@ double var_vec(const VecDoub& vec, const int N, const double& mean)
 	return var/N;
 }
 
-
+double var_vec(const VecDoub& vec, const int N)
+{
+	double m = mean_vec(vec,N);
+	return var_vec(vec,N,m);
+}
 
 /*
 	input: data, zero-padded and size(data)=N=power of 2
