@@ -1,0 +1,15 @@
+N=1000
+p=1
+g=1.
+sp=1.
+tf=1000
+tsave=1024
+tinit=500
+dt=0.1
+r0=1
+meanE=2
+meanI=-1
+a=0.01
+db=1
+seed =123456789
+name=a

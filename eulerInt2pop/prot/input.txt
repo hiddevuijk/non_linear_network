@@ -1,0 +1,14 @@
+N=500
+p=1
+g=1.5
+tf=1000
+tisave=512
+tinit=512
+dt=0.05
+r0=1
+meanE=0
+meanI=0
+a=1
+db=1
+seed =123456789
+name=

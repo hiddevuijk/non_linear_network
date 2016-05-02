@@ -134,11 +134,11 @@ int main(int argc, char* argv[])
 	End of the integration of the equations.
 	From here only analysis.
 */
-
 	// pow2 returns the smalles number that is a power 
 	// of 2 and is larger than tsave. Muliplied by 2
 	// for zero-padding for autocorrelations and PSD
 	int t2 = 2*pow2(tsave);
+
 
 	VecDoub delta(tsave,0.0);
 	VecDoub psd_delta(t2/2,0.0);
@@ -163,14 +163,23 @@ int main(int argc, char* argv[])
 		delta[ti] = 1-delta[ti];
 	write_matrix(delta,tsave,"q"+name+".csv");
 
+	VecDoub average(tsave,0.0);
+	for(int ti=0;ti<tsave;++ti) {
+		for(int i=0;i<N;++i) {
+			average[ti] += xt[i][ti]/double(N);
+		}
+	}
+	write_matrix(average,tsave,"average"+name+".csv");
+
+
 	VecDoub freq(t2/2,0.0);
 	psd_frequencies(t2,dt,freq);
 
 	// write  the rest of the results
 	write_matrix(xt,N,tsave,"x" + name + ".csv");
-	write_matrix(phixt,N,tsave,"phix"+name+".csv");
 	write_matrix(tval,tsave,"t"+name+".csv");
 	write_matrix(freq,t2/2,"f"+name+".csv");
+
 
 	return 0;
 }

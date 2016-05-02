@@ -113,8 +113,8 @@ void acorr_analysis(const std::vector<std::vector<double> >& xt,
 		}			
 
 		// normalize with variance
-		varDelta = var_vec(temp_psd_delta,N);
-		varC = var_vec(temp_psd_C,N);
+		double varDelta = var_vec(temp_psd_delta,N);
+		double varC = var_vec(temp_psd_C,N);
 		for(int ti=0;ti<t2/2;++ti) {
 			psd_delta[ti] += temp_psd_delta[ti]/(N*varDelta);
 			psd_C[ti] += temp_psd_C[ti]/(N*varC);

@@ -46,7 +46,8 @@ int main(int argc, char* argv[])
 
 	int seed;		// seed for the random generator
 	double g;		// gain parameter
-	
+	double self; 	// self excitation strength	
+
 	double meanE;	// mean of the exc. pop
 	double meanI;	// mean of the inh. pop
 
@@ -62,7 +63,7 @@ int main(int argc, char* argv[])
 	double r0;
 
 	// read valuese of the variables from input file
-	read_input(N,p,g,tf,tsave,tinit,r0,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
+	read_input(N,p,g,self,tf,tsave,tinit,r0,mean_noise,var_noise,meanE,meanI,a,db,seed,name, "input.txt");
 
 
 	// integration settings
@@ -76,7 +77,7 @@ int main(int argc, char* argv[])
 
 	// over ride variable if user input is supplied
 	if(argc >1){
-		read_user_input(argc,argv,N,p,g,seed,tf,
+		read_user_input(argc,argv,N,p,g,self,seed,tf,
 			tsave,tinit,r0,mean_noise,var_noise,
 			meanE,meanI,a,db,name);
 	}
@@ -115,7 +116,18 @@ int main(int argc, char* argv[])
 	for(int i=0;i<N;++i) x[i] = 2*(0.5-r.doub());
 	//initialize w
 	if(p==2) gen_rand_mat(w,N,meanE,meanI,stdE,stdI,db,EI,Ne,Ni,r);
-	else gen_rand_mat(w,N,std,r);
+	else{
+		if (self!=0.0) gen_rand_mat(w,N,std,self,r);
+ 		else gen_rand_mat(w,N,std,r);
+	}
+	cout << meanE << endl << meanI << endl;	
+	cout << setprecision(2);
+	for(int i=0;i<10;i++) {
+		for(int j=0;j<10;++j) {
+			cout << w[i][j] << '\t';
+		}
+		cout << endl;
+	}
 
 	// start integration
 	NW nw(wptr,N,f);
@@ -205,8 +217,8 @@ int main(int argc, char* argv[])
 		write_matrix(deltaE,tsave,"qE"+name+".csv");
 		write_matrix(deltaI,tsave,"qI"+name+".csv");
 
-		VecDoub averageE(tsave);
-		VecDoub averageI(tsave);
+		VecDoub averageE(tsave,0.0);
+		VecDoub averageI(tsave,0.0);
 		for(int ti=0;ti<tsave;++ti) {
 			for(int i=0;i<N;++i) {
 				if(EI[i] == 'E')
@@ -242,13 +254,13 @@ int main(int argc, char* argv[])
 			delta[ti] = 1-delta[ti];
 		write_matrix(delta,tsave,"q"+name+".csv");
 
-		VecDoub average(tsave);
+		VecDoub average(tsave,0.0);
 		for(int ti=0;ti<tsave;++ti) {
 			for(int i=0;i<N;++i) {
 				average[ti] += xt[i][ti]/double(N);
 			}
 		}
-		write_matrix(average,tsave,"average"+name".csv");
+		write_matrix(average,tsave,"average"+name+".csv");
 	}
 
 
