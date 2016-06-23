@@ -1,8 +1,8 @@
-N =1000
+N =500
 meanE = 1.
-meanI = -1
-g=0.4264
-a=0.1
+meanI = -10.
+g=0.41666
+a=0.01
 db=1
 dist=normal
 seed =123456789

@@ -1,0 +1,14 @@
+N=1000
+p=2
+g=1.1
+tf=128
+tisave=128
+Nstat=10
+dt=0.1
+r0=.1
+meanE=1
+meanI=-1
+a=1
+db=1
+seed =123456789
+name=
