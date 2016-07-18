@@ -12,9 +12,9 @@ std::string remove_text(std::string str)
 }
 
 void read_input(int& N,int& p, double& g, double& tf, int& tsave,
-		double& tinit,double& dt, double& r0,
-		double& meanE, double& meanI, double& a,
-		int&db,int& seed,std::string& name,std::string infile_name)
+		double& tinit,double& dt, double& r0,double& meanE,
+		double& meanI, double& a,int&db,double& stdN,int& seed,
+		std::string& name,std::string infile_name)
 {
 	std::ifstream input(infile_name);
 	std::string temp;
@@ -66,6 +66,10 @@ void read_input(int& N,int& p, double& g, double& tf, int& tsave,
 	std::getline(input,temp);
 	temp = remove_text(temp);
 	db = std::stoi(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	stdN = std::stod(temp);
 
 	std::getline(input,temp);
 	temp = remove_text(temp);

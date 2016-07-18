@@ -1,21 +1,12 @@
 #include "Eigen/Core"
 
-// nr3 headers
-#include "nr_headers/nr3.h"
-#include "nr_headers/fourier.h"
 
 // other headers
 #include "headers/write_matrix.h"
 #include "headers/read_input.h"
 #include "headers/functions.h"
-#include "headers/other.h"
 #include "headers/genRandMat.h"
 #include "headers/eulerInt.h"
-#include "headers/acorr.h"
-#include "headers/acorr_analysis.h"
-#include "headers/mean.h"
-#include "headers/other.h"
-#include "headers/normalize.h"
 //std headers
 #include <vector>
 #include <iostream>
@@ -25,8 +16,6 @@
 #include <math.h>
 #include <random>
 
-// nr3 headers
-#include "nr_headers/nr3.h"
 
 
 using namespace::std;
@@ -52,8 +41,10 @@ int main(int argc, char* argv[])
 	int db;			// if db=1 detailed balence contition satisfied
 	double r0;		// parameter in the firing rate function
 
+	double stdN;	// std of added noise
+
 	// read valuese of the variables from input file
-	read_input(N,p,g,tf,tisave,tinit,dt,r0,meanE,meanI,a,db,seed,name, "input.txt");
+	read_input(N,p,g,tf,tisave,tinit,dt,r0,meanE,meanI,a,db,stdN,seed,name, "input.txt");
 
 	if(name!="") name = "_"+name;
 
@@ -108,7 +99,11 @@ int main(int argc, char* argv[])
 		MatrixXd xItInit(Ni,tiInit);
 		vector<double> tin(tiInit);
 		for(int ti=0;ti<tiInit;++ti) {
-			eulerInt(x,r,J,phi,dtsave,dt);
+			if(stdN>0.0)
+				eulerInt(x,r,J,phi,dtsave,dt,stdN,generator,Ndist);
+			else
+				eulerInt(x,r,J,phi,dtsave,dt);
+
 			xEtInit.col(ti) = x.head(Ne);
 			xItInit.col(ti) = x.tail(Ni);
 			tin[ti] = ti*dtsave;
@@ -121,7 +116,10 @@ int main(int argc, char* argv[])
 		MatrixXd xtInit(N,tiInit);
 		vector<double> tin(tiInit);
 		for(int ti=0;ti<tiInit;++ti) {
-			eulerInt(x,r,J,phi,dtsave,dt);
+			if(stdN>0.0)
+				eulerInt(x,r,J,phi,dtsave,dt,stdN,generator,Ndist);
+			else
+				eulerInt(x,r,J,phi,dtsave,dt);
 			xtInit.col(ti) = x;
 			tin[ti] = ti*dtsave;
 		}
@@ -134,7 +132,10 @@ int main(int argc, char* argv[])
 		MatrixXd xIt(Ni,tisave);
 		vector<double> t(tisave,0.0);
 		for(int ti=0;ti<tisave;++ti) {
-			eulerInt(x,r,J,phi,dtsave,dt);
+			if(stdN>0.0)
+				eulerInt(x,r,J,phi,dtsave,dt,stdN,generator,Ndist);
+			else
+				eulerInt(x,r,J,phi,dtsave,dt);
 			xEt.col(ti) = x.head(Ne);
 			xIt.col(ti) = x.tail(Ni);
 			t[ti] = ti*dtsave;
@@ -148,7 +149,10 @@ int main(int argc, char* argv[])
 		MatrixXd xt(N,tisave);
 		vector<double> t(tisave,0.0);
 		for(int ti=0;ti<tisave;++ti) {
-			eulerInt(x,r,J,phi,dtsave,dt);
+			if(stdN>0.0)
+				eulerInt(x,r,J,phi,dtsave,dt,stdN,generator,Ndist);
+			else
+				eulerInt(x,r,J,phi,dtsave,dt);
 			xt.col(ti) = x;
 			t[ti] = ti*dtsave;
 		}
