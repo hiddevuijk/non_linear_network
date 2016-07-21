@@ -6,7 +6,7 @@ from dist import *
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--size','-N',dest='N',type=int,default=500)
+parser.add_argument('--size','-N',dest='N',type=int,default=1000)
 parser.add_argument('--mu','-m',dest='mu',type=float,default=0.0)
 parser.add_argument('--sigma','-s',dest='s',type=float,default=1.)
 parser.add_argument('--dist','-d',dest='dist',type=str,default='normal')
@@ -53,8 +53,10 @@ if rmMax == True:
 
 # make plot
 
-ax1 = plt.subplot2grid((6,4),(0,0),rowspan=4,colspan=4)
-ax2 = plt.subplot2grid((6,4),(4,0),rowspan=2,colspan=4)
+ax1 = plt.subplot2grid((8,4),(0,0),rowspan=4,colspan=4)
+ax2 = plt.subplot2grid((8,4),(4,0),rowspan=2,colspan=4)
+ax3 = plt.subplot2grid((8,4),(6,0),rowspan=2,colspan=4)
+
 
 # plot real,imag eVal
 
@@ -68,8 +70,26 @@ title = 'std = '+str(M.std())
 ax1.set_title(title)
 
 xmax = max([max(eVal.real),max(eVal.imag)])
-ax2.hist(abs(eVal),normed=True)
+ax2.hist(eVal.real,normed=True)
 ax2.set_xlim([0,xmax])
+ax2.set_title("Re{evals}")
+
+
+ddv, v = np.histogram(abs(eVal),bins=20)
+dv = np.asarray([0.0]*len(ddv))
+for i in range(len(dv)):
+	dv[i] = 1.0*ddv[i]/float(N)
+
+vi = []
+for i in range(len(v)-1):
+	vi.append(0.5*(v[i]+v[i+1]))
+	dv[i] /= vi[i]
+
+ax3.plot(vi,dv)
+ax3.set_xlim([0,xmax])
+ax3.set_title("density")
+
+
 
 plt.tight_layout()
 plt.show()
